@@ -9,6 +9,8 @@ dependencies = [
     "boto3-stubs[s3]>=1.42.45",
     "httpx>=0.28.1",
     "ipykernel>=7.2.0",
+    "nbformat>=5.10.4",
     "pandas>=3.0.0",
+    "plotly>=6.5.2",
     "pydantic-settings>=2.12.0",
 ]
