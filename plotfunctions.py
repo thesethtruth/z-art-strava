@@ -1,4 +1,6 @@
 import plotly.graph_objects as go
+from pathlib import Path
+import json
 
 PLOT_TEMPLATE = "plotly_white"
 SITE_PRISM_SLATE = [
@@ -104,4 +106,48 @@ def style_figure(fig: go.Figure, title: str = None, show_legend=None):
     if show_legend is not None:
         layout_updates["showlegend"] = show_legend
 
+    fig = set_site_title(fig, title) if title else fig
+
     fig.update_layout(**layout_updates)
+
+
+def save_plot_json(fig: go.Figure, filename: Path):
+    """Save a Plotly figure to JSON, removing background colors for better compatibility with different themes."""
+    fig_dict = fig.to_plotly_json()
+    layout = fig_dict.get("layout", {})
+
+    layout.pop("paper_bgcolor", None)
+    layout.pop("plot_bgcolor", None)
+
+    template_layout = layout.get("template", {}).get("layout", {})
+    template_layout.pop("paper_bgcolor", None)
+    template_layout.pop("plot_bgcolor", None)
+
+    with open(filename, "w") as f:
+        json.dump(fig_dict, f)
+
+
+def set_site_title(fig: go.Figure, text: str, *, subtitle: str | None = None):
+    title_html = (
+        "<span style='font-family:Josefin Sans,sans-serif;"
+        "font-weight:700;letter-spacing:0.06em'>"
+        f"{text}</span>"
+    )
+    if subtitle:
+        title_html += (
+            "<br><span style='font-family:Poppins,sans-serif;"
+            "font-weight:400;font-size:0.55em;letter-spacing:0.02em;"
+            "color:#cbd5e1'>"
+            f"{subtitle}</span>"
+        )
+
+    fig.update_layout(
+        title={
+            "text": title_html,
+            "x": 0.02,
+            "xanchor": "left",
+            "y": 0.98,
+            "yanchor": "top",
+        }
+    )
+    return fig
