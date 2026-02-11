@@ -2,39 +2,9 @@ import pandas as pd
 from pathlib import Path
 from plotly import express as px
 
+from plotfunctions import PLOT_TEMPLATE, SITE_PRISM_SLATE, style_figure
+
 fp = Path(__file__).parent / "data" / "strava" / "activities.csv"
-
-PLOT_TEMPLATE = "plotly_white"
-X_AXIS_STYLE = {
-    "showgrid": False,
-    "zeroline": False,
-    "showline": True,
-    "linecolor": "black",
-    "linewidth": 1,
-    "ticks": "outside",
-    "ticklen": 5,
-    "tickwidth": 1,
-    "tickcolor": "black",
-    "mirror": False,
-}
-Y_AXIS_STYLE = {
-    "showgrid": False,
-    "zeroline": False,
-    "showline": False,
-    "ticks": "outside",
-    "ticklen": 5,
-    "tickwidth": 1,
-    "tickcolor": "black",
-}
-
-
-def style_figure(fig, show_legend=None):
-    fig.update_xaxes(**X_AXIS_STYLE)
-    fig.update_yaxes(**Y_AXIS_STYLE)
-    layout_updates = {"xaxis_title": None, "yaxis_title": None}
-    if show_legend is not None:
-        layout_updates["showlegend"] = show_legend
-    fig.update_layout(**layout_updates)
 
 
 df = pd.read_csv(fp)
@@ -68,7 +38,7 @@ def plot_bar(
         text=y,
         template=PLOT_TEMPLATE,
         title=title,
-        color_discrete_sequence=px.colors.qualitative.Prism,
+        color_discrete_sequence=SITE_PRISM_SLATE,
         orientation="h",
     )
     fig.update_traces(
@@ -116,8 +86,8 @@ activity_duration = (
 
 plot_bar(
     activity_duration,
-    x="duration_hours",
     y="Activity Type",
+    x="duration_hours",
     title="Total duration by activity type",
     suffix="h",
 )
@@ -135,7 +105,7 @@ fig = px.scatter(
     opacity=0.2,
     template=PLOT_TEMPLATE,
     title="Activity duration",
-    color_discrete_sequence=px.colors.qualitative.Prism,
+    color_discrete_sequence=SITE_PRISM_SLATE,
 )
 style_figure(fig)
 fig.update_yaxes(ticksuffix=" h")
