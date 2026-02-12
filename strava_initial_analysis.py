@@ -8,12 +8,13 @@ from plotfunctions import (
     PRIMARY,
     PLOT_TEMPLATE,
     SITE_PRISM_SLATE,
+    save_plot_json,
     style_figure,
     SITE_BG,
 )
 
 fp = Path(__file__).parent / "data" / "strava" / "activities.csv"
-
+hprefix = "blog-sportsdata-art"
 # %% load data
 df = pd.read_csv(fp)
 print(len(df.columns))
@@ -72,9 +73,11 @@ def plot_bar(
     )
     style_figure(fig, show_legend=False)
     fig.show()
+    return fig
 
 
-plot_bar(activity_counts, title="Activity counts")
+fig = plot_bar(activity_counts, title="Activity counts")
+save_plot_json(fig, name="activity-counts-bar-original")
 
 # %%
 # move Virtual Ride to Ride
@@ -95,8 +98,8 @@ activity_counts = (
     .rename_axis("Activity Type")
     .reset_index(name="count")
 )
-plot_bar(activity_counts, title="Activity counts (after merging)")
-
+fig = plot_bar(activity_counts, title="Activity counts (after merging)")
+save_plot_json(fig, name="activity-counts-bar-merged")
 
 # %%
 # sum by type and duraction in hours
@@ -108,13 +111,14 @@ activity_duration = (
     .sort_values("duration_hours", ascending=False)
 )
 
-plot_bar(
+fig = plot_bar(
     activity_duration,
     y="Activity Type",
     x="duration_hours",
     title="Total duration by activity type",
     suffix="h",
 )
+save_plot_json(fig, name="activity-duration-bar")
 
 # %%
 
@@ -142,5 +146,11 @@ fig = annotate_commute_2g(df, fig)
 
 
 fig.show()
+save_plot_json(fig, name="activity-duration-scatter")
+
 
 # %%
+
+from plotfunctions import upload_all_plots_to_s3
+
+upload_all_plots_to_s3(prefix=hprefix)

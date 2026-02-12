@@ -1,8 +1,12 @@
 import plotly.graph_objects as go
 import plotly.io as pio
+from plotly.utils import PlotlyJSONEncoder
 from pathlib import Path
 import json
+from hclient import HetznerS3Client
 
+
+PLOT_PATH = Path(__file__).parent / "plots"
 SITE_BG = "#0f172a"  # slate-900
 SITE_TEXT = "#cbd5e1"  # muted white
 SITE_HEADER = "#e6edf5"
@@ -38,6 +42,8 @@ SITE_PRISM_SLATE = [
 PRIMARY = SITE_PRISM_SLATE[0]
 SECONDARY = SITE_PRISM_SLATE[1]
 ACCENT = SITE_PRISM_SLATE[5]
+
+client = HetznerS3Client(bucket_name="public-plots", data_path=PLOT_PATH)
 
 site_template = go.layout.Template(
     layout=go.Layout(
@@ -133,16 +139,27 @@ def style_figure(fig: go.Figure, title: str = None, show_legend=None):
         fig.update_layout(**layout_updates)
 
 
-def save_plot_json(fig: go.Figure, filename: Path):
+def save_plot_json(fig: go.Figure, name: str, folder: Path = PLOT_PATH):
     fig_dict = fig.to_plotly_json()
     layout = fig_dict.get("layout", {})
+    transparent = "rgba(0,0,0,0)"
 
-    layout.pop("paper_bgcolor", None)
-    layout.pop("plot_bgcolor", None)
+    layout["paper_bgcolor"] = transparent
+    layout["plot_bgcolor"] = transparent
 
     template_layout = layout.get("template", {}).get("layout", {})
-    template_layout.pop("paper_bgcolor", None)
-    template_layout.pop("plot_bgcolor", None)
+    template_layout["paper_bgcolor"] = transparent
+    template_layout["plot_bgcolor"] = transparent
 
-    with open(filename, "w") as f:
-        json.dump(fig_dict, f)
+    folder.mkdir(parents=True, exist_ok=True)
+    filename = folder / f"{name}.json"
+
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(fig_dict, f, cls=PlotlyJSONEncoder)
+
+
+def upload_all_plots_to_s3(prefix: str = None):
+
+    for file in PLOT_PATH.glob("*.json"):
+        object_name = f"{prefix + '-' if prefix else ''}{file.stem}.json"
+        client.upload_file(file, object_name=object_name)
