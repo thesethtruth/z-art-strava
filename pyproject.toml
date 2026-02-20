@@ -7,8 +7,11 @@ requires-python = ">=3.14"
 dependencies = [
     "boto3>=1.42.45",
     "boto3-stubs[s3]>=1.42.45",
+    "contextily>=1.7.0",
+    "geopandas>=1.1.2",
     "httpx>=0.28.1",
     "ipykernel>=7.2.0",
+    "matplotlib>=3.10.8",
     "nbformat>=5.10.4",
     "pandas>=3.0.0",
     "plotly>=6.5.2",
