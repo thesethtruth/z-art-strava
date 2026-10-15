@@ -1,5 +1,5 @@
 import pandas as pd
-from plotfunctions import PRIMARY, SITE_BG
+from plotfunctions import SPORT_COLORS, SITE_BG
 from plotly import graph_objects as go
 
 
@@ -28,8 +28,8 @@ def annotate_ampa(df: pd.DataFrame, fig: go.Figure):
                 marker=dict(
                     symbol="square-open",
                     size=24,
-                    color=PRIMARY,
-                    line=dict(color=PRIMARY, width=3),
+                    color=SPORT_COLORS["Cycling"],
+                    line=dict(color=SPORT_COLORS["Cycling"], width=3),
                 ),
             )
         )
@@ -41,8 +41,8 @@ def annotate_ampa(df: pd.DataFrame, fig: go.Figure):
             showarrow=False,
             xshift=30,
             font=dict(color=SITE_BG, size=12, weight="bold"),
-            bgcolor=PRIMARY,
-            bordercolor=PRIMARY,
+            bgcolor=SPORT_COLORS["Cycling"],
+            bordercolor=SPORT_COLORS["Cycling"],
             borderpad=4,
         )
         return fig
@@ -66,7 +66,7 @@ def annotate_commute_2g(df: pd.DataFrame, fig: go.Figure):
             y1=1.5,
             fillcolor="rgba(0,0,0,0)",
             line=dict(
-                color=PRIMARY,
+                color=SPORT_COLORS["Cycling"],
                 width=3,
             ),
         )
@@ -79,8 +79,8 @@ def annotate_commute_2g(df: pd.DataFrame, fig: go.Figure):
         showarrow=False,
         xshift=30,
         font=dict(color=SITE_BG, size=12, weight="bold"),
-        bgcolor=PRIMARY,
-        bordercolor=PRIMARY,
+        bgcolor=SPORT_COLORS["Cycling"],
+        bordercolor=SPORT_COLORS["Cycling"],
         borderpad=4,
     )
 

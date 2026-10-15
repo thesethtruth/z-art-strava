@@ -139,11 +139,17 @@ gdf_trainings.set_crs(epsg=4326, inplace=True)
 # %%
 # plot all activities with a shape as heatmap
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from plotfunctions import SPORT_COLORS
 
 plt.figure(figsize=(10, 10))
-ax = gdf_trainings.dropna(subset=["activity_shape"]).plot(
+mapped_trainings = gdf_trainings.dropna(subset=["activity_shape"])
+map_sports = sorted(mapped_trainings["sport"].unique())
+ax = mapped_trainings.plot(
     column="sport",
     categorical=True,
+    categories=map_sports,
+    cmap=ListedColormap([SPORT_COLORS[sport] for sport in map_sports]),
     legend=True,
     markersize=1,
     alpha=0.5,

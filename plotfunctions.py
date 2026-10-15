@@ -43,6 +43,36 @@ PRIMARY = SITE_PRISM_SLATE[0]
 SECONDARY = SITE_PRISM_SLATE[1]
 ACCENT = SITE_PRISM_SLATE[5]
 
+# Fixed sport colours, including export labels, independent of category order.
+SPORT_COLORS = {
+    "Cycling": SITE_PRISM_SLATE[0],
+    "Rowing": SITE_PRISM_SLATE[1],
+    "Weight training": SITE_PRISM_SLATE[2],
+    "Running": SITE_PRISM_SLATE[3],
+    "Swimming": SITE_PRISM_SLATE[4],
+    "Hiking": SITE_PRISM_SLATE[5],
+    "Other": SITE_PRISM_SLATE[6],
+    "Ice Skate": SITE_PRISM_SLATE[7],
+    "Snowboard": SITE_PRISM_SLATE[8],
+}
+for sport, aliases in {
+    "Cycling": ["Ride", "Virtual Ride", "CYCLING", "INDOOR_CYCLING"],
+    "Rowing": ["ROWING", "INDOOR_ROWING"],
+    "Weight training": [
+        "Weight Training",
+        "Workout",
+        "Crossfit",
+        "WEIGHT_TRAINING",
+        "STRENGTH_TRAINING",
+        "OTHER_INDOOR",
+    ],
+    "Running": ["Run", "Virtual Run", "RUNNING"],
+    "Swimming": ["Swim", "SWIMMING"],
+    "Hiking": ["Hike", "HIKING"],
+    "Other": ["OTHER", "OTHER_OUTDOOR"],
+}.items():
+    SPORT_COLORS.update({alias: SPORT_COLORS[sport] for alias in aliases})
+
 client = HetznerS3Client(bucket_name="public-plots", data_path=PLOT_PATH)
 
 site_template = go.layout.Template(

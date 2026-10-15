@@ -4,16 +4,14 @@ from pathlib import Path
 from plotly import express as px
 
 from plotfunctions import (
-    ACCENT,
-    PRIMARY,
     PLOT_TEMPLATE,
-    SITE_PRISM_SLATE,
+    SPORT_COLORS,
     save_plot_json,
     style_figure,
-    SITE_BG,
 )
 
-fp = Path(__file__).parent / "data" / "strava" / "activities.csv"
+DATA_FOLDER = Path(__file__).parent / "data"
+fp = DATA_FOLDER / "strava" / "activities.csv"
 hprefix = "blog-sportsdata-art"
 # %% load data
 df = pd.read_csv(fp)
@@ -63,7 +61,7 @@ def plot_bar(
         text=y,
         template=PLOT_TEMPLATE,
         title=title,
-        color_discrete_sequence=SITE_PRISM_SLATE,
+        color_discrete_map=SPORT_COLORS,
         orientation="h",
     )
     fig.update_traces(
@@ -133,7 +131,7 @@ fig = px.scatter(
     opacity=0.4,
     template=PLOT_TEMPLATE,
     title="Activity duration",
-    color_discrete_sequence=SITE_PRISM_SLATE,
+    color_discrete_map=SPORT_COLORS,
 )
 style_figure(fig)
 fig.update_yaxes(ticksuffix=" h")
@@ -154,3 +152,7 @@ save_plot_json(fig, name="activity-duration-scatter")
 from plotfunctions import upload_all_plots_to_s3
 
 upload_all_plots_to_s3(prefix=hprefix)
+
+
+# %%
+df.to_csv(DATA_FOLDER / "strava_trainings.csv")

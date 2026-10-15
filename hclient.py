@@ -92,14 +92,15 @@ class HetznerS3Client:
         return self.client.get_bucket_cors(Bucket=bucket_name)
 
 
-client = HetznerS3Client(bucket_name="public-plots")
-client.set_cors(
-    allowed_methods=["GET", "HEAD"],
-    allowed_origins=[
-        "https://sethvanwieringen.eu",
-        "http://localhost:4321",
-        "http://127.0.0.1:4321",
-    ],
-)
+if __name__ == "__main__":
+    client = HetznerS3Client(bucket_name="public-plots")
+    client.set_cors(
+        allowed_methods=["GET", "HEAD"],
+        allowed_origins=[
+            "https://sethvanwieringen.eu",
+            "http://localhost:4321",
+            "http://127.0.0.1:4321",
+        ],
+    )
 
-client.get_cors()
+    client.get_cors()
