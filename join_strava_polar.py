@@ -456,7 +456,13 @@ consolidated_trainings["sport"] = (
 )
 consolidated_trainings.sort_values("date", kind="stable", inplace=True)
 consolidated_trainings.reset_index(drop=True, inplace=True)
-consolidated_trainings.to_csv(DATA_FOLDER / "consolidated_trainings.csv", index=False)
+consolidated_trainings.to_json(
+    DATA_FOLDER / "consolidated_trainings.json",
+    orient="records",
+    date_format="iso",
+    indent=2,
+    force_ascii=False,
+)
 print("Consolidated activities by source:")
 print(consolidated_trainings["source"].value_counts().to_string())
 

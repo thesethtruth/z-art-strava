@@ -1,0 +1,26 @@
+{
+  "name": "art",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun --hot index.ts",
+    "start": "bun index.ts",
+    "data": "python3 scripts/prepare_data.py",
+    "check": "tsc --noEmit",
+    "test": "bun test",
+    "build": "bun build ./index.html --outdir ./dist --target browser --minify",
+    "export:pdf": "bun scripts/export.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/d3": "^7.4.3",
+    "puppeteer-core": "^25.14.0"
+  },
+  "peerDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "d3": "^7.9.0"
+  }
+}
