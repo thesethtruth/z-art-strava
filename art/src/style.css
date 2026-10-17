@@ -86,3 +86,15 @@ body.exporting #edit { display: none; }
   .stage { display: block !important; padding: 0 !important; min-height: 0 !important; }
   .paper { width: 594mm !important; height: 841mm !important; box-shadow: none; margin: 0; break-inside: avoid; }
 }
+
+.control-tabs, .variant-tabs { display: flex; gap: 4px; }
+.control-tabs { border-bottom: 1px solid #d9d6cf; }
+.control-tabs button { flex: 1; padding: 10px 4px; font-size: 11px; border-bottom: 2px solid transparent; color: #938b7f; }
+.control-tabs button[aria-selected="true"] { color: #4f6256; border-bottom-color: #4f6256; }
+[role="tabpanel"].control-section { border-top: 0; }
+.variant-tabs { background: #eae7df; border-radius: 4px; padding: 3px; margin-top: 15px; }
+.variant-tabs button { flex: 1; font-size: 10px; padding: 8px 3px; border-radius: 3px; }
+.variant-tabs button[aria-selected="true"] { background: #fdfcf8; box-shadow: 0 1px 3px #524c4315; color: #4f6256; }
+.outline-button { display: flex; justify-content: space-between; width: 100%; border: 1px solid #cbc7bc; border-radius: 3px; padding: 8px 10px; font-size: 10px; }
+.outline-button:hover { background: #edeae2; }
+.legend-controls { border-top: 1px solid #e2dfd7; padding-top: 18px; margin-top: 22px; }

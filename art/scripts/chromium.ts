@@ -1,6 +1,6 @@
 import puppeteer from "puppeteer-core";
 import { existsSync } from "node:fs";
-import { normalizeSettings } from "../src/artwork";
+import { normalizeSettings } from "../src/settings";
 
 export function chromeExecutable() {
   const candidates = [

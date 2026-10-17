@@ -17,7 +17,12 @@
       <aside class="controls" aria-label="Artwork controls">
         <header><span class="eyebrow">ARTWORK STUDIO</span><button id="preview" class="text-button">Preview ↗</button></header>
         <div class="intro"><h1>Movement</h1><p>2016 — 2025 <span>·</span> A1</p></div>
-        <section class="control-section">
+        <nav class="control-tabs" role="tablist" aria-label="Artwork settings">
+          <button id="tab-layout" role="tab" aria-controls="panel-layout" aria-selected="true">Layout</button>
+          <button id="tab-color" role="tab" aria-controls="panel-color" aria-selected="false" tabindex="-1">Color</button>
+          <button id="tab-grid" role="tab" aria-controls="panel-grid" aria-selected="false" tabindex="-1">Grid</button>
+        </nav>
+        <section id="panel-color" class="control-section" role="tabpanel" aria-labelledby="tab-color" hidden>
           <div class="section-heading"><h2>Palette</h2><button id="reset-palette" class="text-button">Reset</button></div>
           <div id="palette-presets" role="group" aria-label="Palette presets"></div>
           <div class="random-palette">
@@ -31,14 +36,42 @@
             <label>Week points<input id="centers" type="color" aria-label="Week point color" /></label>
             <label>Legend<input id="ink" type="color" aria-label="Legend text color" /></label>
           </div>
-        </section>
-        <section class="control-section">
-          <h2>Composition</h2>
-          <label class="toggle" title="Place each circle's inner edge on the base ring around the week."><span>Anchor circles to week</span><input id="anchor-circles" type="checkbox" role="switch" /></label>
-          <label class="toggle"><span>Stack mixed sport</span><input id="stack-mixed" type="checkbox" role="switch" /></label>
-          <p id="mixed-help" class="control-hint"></p>
-          <div id="sliders"></div>
+          <div id="color-sliders"></div>
           <label class="select-row"><span>Blending</span><select id="blend"></select></label>
+        </section>
+        <section id="panel-layout" class="control-section" role="tabpanel" aria-labelledby="tab-layout">
+          <h2>Composition</h2>
+          <div class="variant-tabs" role="tablist" aria-label="Layout variant">
+            <button id="variant-weekday" role="tab" aria-selected="true" aria-controls="weekday-settings">Seven day</button>
+            <button id="variant-spring" role="tab" aria-selected="false" tabindex="-1" aria-controls="spring-settings">Spring cluster</button>
+          </div>
+          <p id="layout-help" class="control-hint"></p>
+          <div id="shape-sliders"></div>
+          <div id="weekday-settings" role="tabpanel" aria-labelledby="variant-weekday">
+            <label class="toggle" title="Place each circle's inner edge on the base ring around the week."><span>Anchor circles to week</span><input id="anchor-circles" type="checkbox" role="switch" /></label>
+            <label class="toggle"><span>Stack mixed sport</span><input id="stack-mixed" type="checkbox" role="switch" /></label>
+            <p id="mixed-help" class="control-hint"></p>
+            <div id="weekday-sliders"></div>
+          </div>
+          <div id="spring-settings" role="tabpanel" aria-labelledby="variant-spring" hidden>
+            <div id="spring-sliders"></div>
+            <button id="reshuffle" class="outline-button">Reshuffle arrangement <span aria-hidden="true">↻</span></button>
+            <p class="control-hint">Spring strength pulls bubbles toward their own week center. Collisions also act between neighboring weeks, letting clusters turn and reshape into open space. Size dominance keeps larger bubbles closer in.</p>
+          </div>
+        </section>
+        <section id="panel-grid" class="control-section" role="tabpanel" aria-labelledby="tab-grid" hidden>
+          <h2>Calendar grid</h2>
+          <p class="control-hint">Ten years across, 53 weeks down. Each cluster stays attached to its week.</p>
+          <div id="grid-sliders"></div>
+          <label class="toggle"><span>Week points only on empty weeks</span><input id="empty-week-points-only" type="checkbox" role="switch" /></label>
+          <div class="legend-controls">
+            <h2>Legend placement</h2>
+            <label class="select-row"><span>Grid edge</span><select id="legendEdge"><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select></label>
+            <label class="select-row"><span>Position</span><select id="legendAlign"><option value="start">Left</option><option value="center">Center</option><option value="end">Right</option></select></label>
+            <label class="select-row"><span>Orientation</span><select id="legendOrientation"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select></label>
+            <label id="legend-facing-control" class="select-row"><span>Facing</span><select id="legendFacing"><option value="left">Left · reads upward</option><option value="right">Right · reads downward</option></select></label>
+            <p class="control-hint">Position follows the selected grid edge and stays aligned as you change the grid width and height.</p>
+          </div>
         </section>
         <section class="control-section inspect-section">
           <label class="toggle"><span>Inspect weeks</span><input id="inspect" type="checkbox" role="switch" /></label>
@@ -46,7 +79,7 @@
         </section>
         <footer>
           <button id="export-pdf" class="primary">Export A1 PDF <span>↓</span></button>
-          <div class="secondary-actions"><button id="export-png">PNG</button><button id="save-settings">Save settings</button><button id="load-settings">Load settings</button></div>
+          <div class="secondary-actions"><button id="export-png">PNG</button><button id="save-settings">Export settings</button><button id="load-settings">Import settings</button></div>
           <input id="settings-file" type="file" accept="application/json,.json" hidden />
           <div class="footer-row"><button id="reset-all" class="text-button">Reset all</button><span>594 × 841 mm</span></div>
           <p id="status" role="status" aria-live="polite"></p>

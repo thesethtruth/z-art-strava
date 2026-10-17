@@ -1,6 +1,6 @@
 import index from "./index.html";
 import { createPdf } from "./scripts/chromium";
-import { ARTWORK_NAME } from "./src/artwork";
+import { ARTWORK_NAME } from "./src/activity-data";
 
 export function startServer(port = Number(process.env.PORT || 3000)) {
   let exportInProgress = false;

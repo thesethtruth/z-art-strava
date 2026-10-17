@@ -1,5 +1,8 @@
-import { ARTWORK_NAME, BLEND_MODES, DEFAULTS, LIMITS, PALETTES, PAPER, SPORTS, YEARS, applyPalette, drawArtwork, matchingPalette, normalizeSettings } from "./artwork";
-import type { Highlight, Settings, Sport } from "./artwork";
+import { BLEND_MODES, DEFAULTS, LEGEND_OPTIONS, LIMITS, PALETTES, PAPER, SPORTS, applyPalette, settingsForExport, matchingPalette, normalizeSettings } from "./settings";
+import type { Settings, Sport } from "./settings";
+import { ARTWORK_NAME, YEARS } from "./activity-data";
+import { drawArtwork } from "./artwork";
+import type { Highlight } from "./artwork";
 import { randomPalette } from "./random-palette";
 import type { ColorMood } from "./random-palette";
 
@@ -99,19 +102,25 @@ for (const sport of SPORTS) {
 }
 
 const sliderDefinitions = [
-  ["blobRadius", "Circle size · radius at 1 hour", 0.1, "mm"],
-  ["baseRadius", "Base radius", 0.1, "mm"],
-  ["spreadFraction", "Mixed-sport spread", 0.01, ""],
-  ["stackOverlap", "Stack overlap", 0.01, ""],
-  ["opacity", "Opacity", 0.05, ""],
-  ["gridSize", "Grid width", 5, "mm"],
-  ["gridHeight", "Grid height", 1, "mm"],
-  ["centerSize", "Week point size", 0.01, "mm"],
+  ["blobRadius", "Circle size · radius at 1 hour", 0.1, "mm", "shape"],
+  ["baseRadius", "Inner ring radius", 0.1, "mm", "weekday"],
+  ["spreadFraction", "Mixed-sport spread", 0.01, "", "weekday"],
+  ["stackOverlap", "Stack overlap", 0.01, "", "weekday"],
+  ["opacity", "Opacity", 0.05, "", "color"],
+  ["gridSize", "Grid width", 5, "mm", "grid"],
+  ["gridHeight", "Grid height", 1, "mm", "grid"],
+  ["centerSize", "Week point size", 0.01, "mm", "grid"],
+  ["springStrength", "Spring strength", 0.01, "", "spring"],
+  ["collisionStrength", "Collision pressure", 0.05, "", "spring"],
+  ["clusterOverlap", "Allowed overlap", 0.05, "", "spring"],
+  ["outerRadius", "Maximum center distance", 0.5, "mm", "spring"],
+  ["dominance", "Size dominance", 0.05, "", "spring"],
+  ["damping", "Damping", 0.05, "", "spring"],
 ] as const;
 function sliderValue(key: string, value: number, unit: string) {
   return `${key === "spreadFraction" || key === "stackOverlap" ? value.toFixed(2) : value}${unit ? ` ${unit}` : ""}`;
 }
-for (const [key, title, step, unit] of sliderDefinitions) {
+for (const [key, title, step, unit, panel] of sliderDefinitions) {
   const label = document.createElement("label");
   label.className = "slider";
   label.id = `${key}-control`;
@@ -131,10 +140,66 @@ for (const [key, title, step, unit] of sliderDefinitions) {
     output.value = sliderValue(key, settings[key], unit);
     persist();
   });
-  head.append(text, output); label.append(head, input); $("sliders").append(label);
+  head.append(text, output); label.append(head, input); $(`${panel}-sliders`).append(label);
+}
+
+function setupTabs(tabs: HTMLButtonElement[], activate: (tab: HTMLButtonElement) => void) {
+  for (const tab of tabs) {
+    tab.addEventListener("click", () => activate(tab));
+    tab.addEventListener("keydown", e => {
+      const index = tabs.indexOf(tab);
+      const next = e.key === "ArrowRight" ? (index + 1) % tabs.length : e.key === "ArrowLeft" ? (index + tabs.length - 1) % tabs.length : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : -1;
+      if (next < 0) return;
+      e.preventDefault(); tabs[next]!.focus(); activate(tabs[next]!);
+    });
+  }
+}
+const controlTabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".control-tabs [role=tab]"));
+setupTabs(controlTabs, active => {
+  for (const tab of controlTabs) {
+    const selected = tab === active;
+    tab.setAttribute("aria-selected", String(selected)); tab.tabIndex = selected ? 0 : -1;
+    $(tab.getAttribute("aria-controls")!).hidden = !selected;
+  }
+});
+const variantTabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".variant-tabs [role=tab]"));
+setupTabs(variantTabs, active => {
+  settings.variant = active.id === "variant-spring" ? "spring" : "weekday";
+  syncControls(); persist();
+});
+$("reshuffle").addEventListener("click", () => {
+  settings.clusterSeed = settings.clusterSeed % 1_000_000 + 1;
+  persist();
+});
+
+function syncLegendControls() {
+  const verticalEdge = settings.legendEdge === "left" || settings.legendEdge === "right";
+  const align = $<HTMLSelectElement>("legendAlign");
+  align.options[0]!.text = verticalEdge ? "Top" : "Left";
+  align.options[2]!.text = verticalEdge ? "Bottom" : "Right";
+  for (const key of Object.keys(LEGEND_OPTIONS) as (keyof typeof LEGEND_OPTIONS)[]) {
+    $<HTMLSelectElement>(key).value = settings[key];
+  }
+  $("legend-facing-control").hidden = settings.legendOrientation !== "vertical";
+}
+for (const key of Object.keys(LEGEND_OPTIONS) as (keyof typeof LEGEND_OPTIONS)[]) {
+  $(key).addEventListener("change", event => {
+    settings = normalizeSettings({ ...settings, [key]: (event.target as HTMLSelectElement).value });
+    syncLegendControls(); persist();
+  });
 }
 
 function syncControls() {
+  syncLegendControls();
+  for (const tab of variantTabs) {
+    const selected = tab.id === `variant-${settings.variant}`;
+    tab.setAttribute("aria-selected", String(selected)); tab.tabIndex = selected ? 0 : -1;
+    $(tab.getAttribute("aria-controls")!).hidden = !selected;
+  }
+  $("layout-help").textContent = settings.variant === "spring"
+    ? "Bubbles gather around their week’s center and make room for neighboring clusters. Their angles are free to change."
+    : "A fixed angle for each weekday, Monday through Sunday.";
+  canvas.setAttribute("aria-label", `Sporting activity from 2016 through 2025. Ten columns of years, fifty-three rows of weeks; ${settings.variant === "spring" ? "spring clusters" : "weekday circles"} show daily hours of rowing, weight training, cycling, and running.`);
   syncPresetSelection();
   for (const sport of SPORTS) {
     document.querySelector<HTMLInputElement>(`input[data-sport="${sport}"]`)!.value = settings.colors[sport];
@@ -147,6 +212,7 @@ function syncControls() {
   }
   $<HTMLInputElement>("anchor-circles").checked = settings.anchorCircles;
   $<HTMLInputElement>("stack-mixed").checked = settings.stackMixed;
+  $<HTMLInputElement>("empty-week-points-only").checked = settings.emptyWeekPointsOnly;
   $("spreadFraction-control").hidden = settings.stackMixed;
   $("stackOverlap-control").hidden = !settings.stackMixed;
   $("mixed-help").textContent = settings.stackMixed
@@ -158,6 +224,7 @@ for (const key of ["background", "centers", "ink"] as const) {
   $<HTMLInputElement>(key).addEventListener("input", e => { settings[key] = (e.target as HTMLInputElement).value; $("palette-note").textContent = ""; persist(); });
 }
 $("anchor-circles").addEventListener("change", e => { settings.anchorCircles = (e.target as HTMLInputElement).checked; persist(); });
+$("empty-week-points-only").addEventListener("change", e => { settings.emptyWeekPointsOnly = (e.target as HTMLInputElement).checked; persist(); });
 $("stack-mixed").addEventListener("change", e => { settings.stackMixed = (e.target as HTMLInputElement).checked; syncControls(); persist(); });
 $("blend").addEventListener("change", e => { settings.blend = (e.target as HTMLSelectElement).value as Settings["blend"]; persist(); });
 $("reset-palette").addEventListener("click", () => {
@@ -219,7 +286,11 @@ function download(blob: Blob, name: string) {
   const a = document.createElement("a"); a.href = url; a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
-$("save-settings").addEventListener("click", () => download(new Blob([JSON.stringify(settings, null, 2)], { type: "application/json" }), "movement-settings.json"));
+$("save-settings").addEventListener("click", () => {
+  const file = settingsForExport(settings);
+  download(new Blob([JSON.stringify(file, null, 2)], { type: "application/json" }), `movement-${file.mode}-settings.json`);
+  message(`${file.mode === "spring" ? "Spring cluster" : "Seven day"} settings exported, including both layouts’ controls and the saved arrangement seed.`);
+});
 $("load-settings").addEventListener("click", () => $("settings-file").click());
 $("settings-file").addEventListener("change", async e => {
   const input = e.target as HTMLInputElement;
@@ -228,7 +299,7 @@ $("settings-file").addEventListener("change", async e => {
     if (file.size > 20_000) throw new Error("That file is too large for artwork settings.");
     const value = JSON.parse(await file.text());
     if (!value || typeof value !== "object" || !value.colors) throw new Error("Choose an exported artwork settings file.");
-    settings = normalizeSettings(value); $("palette-note").textContent = ""; syncControls(); persist(); message("Settings loaded.");
+    settings = normalizeSettings(value); $("palette-note").textContent = ""; syncControls(); persist(); message(`${settings.variant === "spring" ? "Spring cluster" : "Seven day"} settings imported.`);
   } catch (error) { message(error instanceof Error ? error.message : "Could not read settings."); }
   input.value = "";
 });
@@ -278,7 +349,7 @@ const artworkApi = {
     document.body.classList.add("exporting");
     settings = normalizeSettings(input);
     await document.fonts.ready;
-    drawArtwork(canvas, settings, Math.max(72, Math.min(300, dpi)) / 25.4);
+    layout = drawArtwork(canvas, settings, Math.max(72, Math.min(300, dpi)) / 25.4);
     return { width: canvas.width, height: canvas.height, marks: layout.marks.length };
   },
 };

@@ -1,5 +1,5 @@
-import { SPORTS } from "./artwork";
-import type { Palette, Sport } from "./artwork";
+import { SPORTS } from "./settings";
+import type { Palette, Sport } from "./settings";
 import { fitChroma, oklchHex, paletteQuality } from "./color-science";
 
 export const MOODS = ["muted", "neon", "high-contrast"] as const;

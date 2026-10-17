@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
-import { applyPalette, BLEND_MODES, calendarPosition, DAILY, DAY_SECTOR, DEFAULTS, GRID, makeLayout, matchingPalette, META, normalizeSettings, PALETTES, placeDay, SPORTS, YEARS } from "./artwork";
-import type { Daily } from "./artwork";
+import { applyPalette, BLEND_MODES, DAY_SECTOR, DEFAULTS, GRID, matchingPalette, normalizeSettings, PALETTES, PAPER, SPORTS } from "./settings";
+import { calendarPosition, DAILY, META, YEARS } from "./activity-data";
+import type { Daily } from "./activity-data";
+import { makeLayout } from "./artwork";
+import { placeDay } from "./weekday-layout";
 import source from "../../data/consolidated_trainings.json";
 
 test("every day stays in its calendar year and the 53-row Monday-start grid", () => {
@@ -55,7 +58,7 @@ test("spread and stacked compositions stay inside the paper at default scale", (
   for (const stackMixed of [false, true]) for (const stackOverlap of [0, 0.5]) {
     for (const m of makeLayout({ ...DEFAULTS, stackMixed, stackOverlap }).marks) {
       expect(m.x - m.r).toBeGreaterThan(0); expect(m.x + m.r).toBeLessThan(594);
-      expect(m.y - m.r).toBeGreaterThan(0); expect(m.y + m.r).toBeLessThan(GRID.legendY - 4);
+      expect(m.y - m.r).toBeGreaterThan(0); expect(m.y + m.r).toBeLessThan(PAPER.height);
     }
   }
 });
@@ -65,7 +68,7 @@ test("weeks use the vertical page extent independently of circle scales and grid
   const narrow = makeLayout({ ...DEFAULTS, gridSize: 360 });
   expect(wide.weeks[0]!.y).toBe(GRID.top);
   expect(wide.weeks[52]!.y).toBe(GRID.bottom);
-  expect(GRID.bottom - GRID.top).toBe(741);
+  expect(GRID.bottom - GRID.top).toBe(769);
   expect(narrow.weeks.map(w => w.y)).toEqual(wide.weeks.map(w => w.y));
   expect(narrow.marks.map(m => m.r)).toEqual(wide.marks.map(m => m.r));
   expect(DEFAULTS.blobRadius).toBe(2.9);
@@ -74,7 +77,9 @@ test("weeks use the vertical page extent independently of circle scales and grid
   expect(cropped.weeks).toHaveLength(wide.weeks.length);
   expect(cropped.marks.map(m => m.r)).toEqual(wide.marks.map(m => m.r));
   expect(cropped.weeks[52]!.y - cropped.weeks[0]!.y).toBe(470);
-  expect(cropped.weeks[0]!.y + cropped.weeks[52]!.y).toBe(GRID.top + GRID.bottom);
+  expect(cropped.weeks[0]!.y).toBe(PAPER.height - cropped.weeks[52]!.y);
+  expect(cropped.weeks[0]!.y + cropped.weeks[52]!.y).toBe(PAPER.height);
+  expect(wide.weeks[0]!.y).toBe(PAPER.height - wide.weeks[52]!.y);
 });
 
 const exampleDay: Daily[] = SPORTS.map((sport, i) => ({ date: "2020-01-06", sport, hours: [1, 9, 4, 0.25][i]!, activities: 1 }));
@@ -126,7 +131,7 @@ test("old settings migrate the base radius without keeping removed options or mi
   expect(settings).not.toHaveProperty("durationRadius");
   expect(settings).not.toHaveProperty("activitySpread");
   const bounds = normalizeSettings({ gridHeight: 900, spreadFraction: 5, stackOverlap: 1 });
-  expect(bounds.gridHeight).toBe(741);
+  expect(bounds.gridHeight).toBe(769);
   expect(bounds.spreadFraction).toBe(1);
   expect(bounds.stackOverlap).toBe(0.5);
 });

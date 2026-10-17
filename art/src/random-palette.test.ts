@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { applyPalette, DEFAULTS, SPORTS } from "./artwork";
+import { applyPalette, DEFAULTS, SPORTS } from "./settings";
 import { contrastRatio, fitChroma, hexToRgb, oklchHex, oklchToLinearRgb, rgbToOklab } from "./color-science";
 import { MOODS, randomPalette } from "./random-palette";
 

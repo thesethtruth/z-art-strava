@@ -1,7 +1,8 @@
 import { mkdir } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { startServer } from "../index";
-import { ARTWORK_NAME, DEFAULTS } from "../src/artwork";
+import { ARTWORK_NAME } from "../src/activity-data";
+import { DEFAULTS } from "../src/settings";
 import { createPdf } from "./chromium";
 
 const args = process.argv.slice(2);

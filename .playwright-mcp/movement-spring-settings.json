@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 2,
+  "mode": "spring",
+  "background": "#fbf0e4",
+  "centers": "#8c857d",
+  "ink": "#816c5b",
+  "colors": {
+    "Cycling": "#807d5c",
+    "Rowing": "#b9573f",
+    "Weight training": "#ce9360",
+    "Running": "#975a70"
+  },
+  "opacity": 0.5,
+  "blobRadius": 2.7,
+  "gridSize": 470,
+  "gridHeight": 741,
+  "centerSize": 0.46,
+  "emptyWeekPointsOnly": false,
+  "blend": "source-over",
+  "legendEdge": "bottom",
+  "legendAlign": "center",
+  "legendOrientation": "horizontal",
+  "legendFacing": "left",
+  "spring": {
+    "springStrength": 0.21,
+    "collisionStrength": 0.05,
+    "clusterOverlap": 0.3,
+    "outerRadius": 14,
+    "dominance": 1,
+    "damping": 0.35,
+    "clusterSeed": 9
+  },
+  "weekday": {
+    "baseRadius": 0,
+    "anchorCircles": true,
+    "spreadFraction": 0.8,
+    "stackMixed": false,
+    "stackOverlap": 0.25
+  }
+}
