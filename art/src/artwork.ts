@@ -42,16 +42,18 @@ export type Layout = ReturnType<typeof makeLayout>;
 export type Highlight = { sport?: Sport; week?: Week } | null;
 const activityLayers = new WeakMap<HTMLCanvasElement, HTMLCanvasElement>();
 
-export function drawArtwork(canvas: HTMLCanvasElement, settings: Settings, pixelsPerMm: number, highlight: Highlight = null) {
-  const width = Math.round(PAPER.width * pixelsPerMm);
-  const height = Math.round(PAPER.height * pixelsPerMm);
+export function drawArtwork(canvas: HTMLCanvasElement, settings: Settings, pixelsPerMm: number, highlight: Highlight = null, bleed = 0) {
+  const width = Math.round((PAPER.width + 2 * bleed) * pixelsPerMm);
+  const height = Math.round((PAPER.height + 2 * bleed) * pixelsPerMm);
   if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
   const ctx = canvas.getContext("2d", { alpha: false })!;
-  ctx.setTransform(width / PAPER.width, 0, 0, height / PAPER.height, 0, 0);
+  const sx = width / (PAPER.width + 2 * bleed);
+  const sy = height / (PAPER.height + 2 * bleed);
+  ctx.setTransform(sx, 0, 0, sy, bleed * sx, bleed * sy);
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = "source-over";
   ctx.fillStyle = settings.background;
-  ctx.fillRect(0, 0, PAPER.width, PAPER.height);
+  ctx.fillRect(-bleed, -bleed, PAPER.width + 2 * bleed, PAPER.height + 2 * bleed);
   const layout = makeLayout(settings);
 
   ctx.fillStyle = settings.centers;
@@ -74,7 +76,7 @@ export function drawArtwork(canvas: HTMLCanvasElement, settings: Settings, pixel
     paint = layer.getContext("2d")!;
     paint.setTransform(1, 0, 0, 1, 0, 0);
     paint.clearRect(0, 0, width, height);
-    paint.setTransform(width / PAPER.width, 0, 0, height / PAPER.height, 0, 0);
+    paint.setTransform(sx, 0, 0, sy, bleed * sx, bleed * sy);
   } else {
     const previous = activityLayers.get(canvas);
     if (previous) { previous.width = previous.height = 1; activityLayers.delete(canvas); }
@@ -89,7 +91,7 @@ export function drawArtwork(canvas: HTMLCanvasElement, settings: Settings, pixel
     paint.arc(mark.x, mark.y, mark.r, 0, Math.PI * 2);
     paint.fill();
   }
-  if (layer) { ctx.globalAlpha = 1; ctx.drawImage(layer, 0, 0, PAPER.width, PAPER.height); }
+  if (layer) { ctx.globalAlpha = 1; ctx.drawImage(layer, -bleed, -bleed, PAPER.width + 2 * bleed, PAPER.height + 2 * bleed); }
   drawOverlaps(ctx, layout.marks, settings, focused);
 
   // The legend shares the same placement in preview, PNG, and PDF.

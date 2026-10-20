@@ -79,15 +79,15 @@ export function drawOverlaps(ctx: CanvasRenderingContext2D, marks: Mark[], setti
   const regions = overlapRegions(marks);
   const patches = regions.map(region => {
     const { x, y, r } = region.owner;
-    const left = Math.max(0, Math.floor((x - r) * scale.a) - 1);
-    const top = Math.max(0, Math.floor((y - r) * scale.d) - 1);
-    const right = Math.min(ctx.canvas.width, Math.ceil((x + r) * scale.a) + 1);
-    const bottom = Math.min(ctx.canvas.height, Math.ceil((y + r) * scale.d) + 1);
+    const left = Math.max(0, Math.floor((x - r) * scale.a + scale.e) - 1);
+    const top = Math.max(0, Math.floor((y - r) * scale.d + scale.f) - 1);
+    const right = Math.min(ctx.canvas.width, Math.ceil((x + r) * scale.a + scale.e) + 1);
+    const bottom = Math.min(ctx.canvas.height, Math.ceil((y + r) * scale.d + scale.f) + 1);
     if (right <= left || bottom <= top) return null;
     const patch = document.createElement("canvas");
     patch.width = right - left; patch.height = bottom - top;
     patch.getContext("2d")!.drawImage(ctx.canvas, left, top, patch.width, patch.height, 0, 0, patch.width, patch.height);
-    return { region, patch, x: left / scale.a, y: top / scale.d, width: patch.width / scale.a, height: patch.height / scale.d };
+    return { region, patch, x: (left - scale.e) / scale.a, y: (top - scale.f) / scale.d, width: patch.width / scale.a, height: patch.height / scale.d };
   });
   for (const item of patches) {
     if (!item) continue;

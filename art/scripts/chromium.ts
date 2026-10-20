@@ -1,6 +1,8 @@
 import puppeteer from "puppeteer-core";
 import { existsSync } from "node:fs";
 import { normalizeSettings } from "../src/settings";
+import { printDimensions } from "../src/print";
+import { setPrintBoxes } from "./pdf-boxes";
 
 export function chromeExecutable() {
   const candidates = [
@@ -16,15 +18,17 @@ export function chromeExecutable() {
 }
 
 export async function createPdf(baseUrl: string, input: unknown, previewPath?: string) {
+  const settings = normalizeSettings(input);
+  const size = printDimensions(settings);
   const browser = await puppeteer.launch({ executablePath: chromeExecutable(), headless: true });
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 1000 });
     await page.goto(`${baseUrl}?export=1`, { waitUntil: "networkidle0" });
     await page.waitForFunction(() => window.artwork?.ready);
-    await page.evaluate(async settings => { await window.artwork.renderForExport(settings, 300); }, normalizeSettings(input));
+    await page.evaluate(async settings => { await window.artwork.renderForExport(settings, 300); }, settings);
     const pdf = await page.pdf({
-      width: "594mm", height: "841mm", preferCSSPageSize: true,
+      width: `${size.width}mm`, height: `${size.height}mm`, preferCSSPageSize: true,
       printBackground: true, displayHeaderFooter: false,
       margin: { top: 0, bottom: 0, left: 0, right: 0 }, timeout: 120_000,
     });
@@ -33,12 +37,12 @@ export async function createPdf(baseUrl: string, input: unknown, previewPath?: s
       const png = await page.evaluate(() => {
         const source = document.querySelector("canvas")!;
         const preview = document.createElement("canvas");
-        preview.width = 1188; preview.height = 1682;
+        preview.width = 1188; preview.height = Math.round(1188 * source.height / source.width);
         preview.getContext("2d")!.drawImage(source, 0, 0, preview.width, preview.height);
         return preview.toDataURL("image/png").split(",")[1]!;
       });
       await Bun.write(previewPath, Buffer.from(png, "base64"));
     }
-    return pdf;
+    return await setPrintBoxes(pdf, settings);
   } finally { await browser.close(); }
 }

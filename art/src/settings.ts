@@ -22,6 +22,7 @@ export const LEGEND_OPTIONS = {
 } as const;
 export type LegendSettings = { [K in keyof typeof LEGEND_OPTIONS]: (typeof LEGEND_OPTIONS)[K][number] };
 export type Settings = {
+  printBleed: boolean;
   background: string;
   centers: string;
   ink: string;
@@ -56,6 +57,7 @@ export type Settings = {
 } & LegendSettings;
 
 export const DEFAULTS: Settings = {
+  printBleed: true,
   background: "#fbf4eb",
   centers: "#c8c3bc",
   ink: "#7e7871",
@@ -194,7 +196,7 @@ export function normalizeSettings(input: unknown): Settings {
     const [lo, hi] = LIMITS[key];
     if (typeof value === "number" && Number.isFinite(value)) result[key] = Math.min(hi, Math.max(lo, value));
   }
-  for (const key of ["anchorCircles", "stackMixed", "emptyWeekPointsOnly", "overlapEnabled", "volumeLegendEnabled"] as const) {
+  for (const key of ["printBleed", "anchorCircles", "stackMixed", "emptyWeekPointsOnly", "overlapEnabled", "volumeLegendEnabled"] as const) {
     if (typeof s[key] === "boolean") result[key] = s[key];
   }
   if (s.variant === "spring" || s.variant === "weekday") result.variant = s.variant;

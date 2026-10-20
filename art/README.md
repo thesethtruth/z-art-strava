@@ -98,7 +98,7 @@ The **19.9483333333-hour Amsterdam–Paris ride on 8 June 2019 is retained**. No
 
 ## Print and export
 
-**Export A1 PDF** uses your installed Chrome in headless mode through `puppeteer-core`, with the current settings. It draws a **7016 × 9933 px canvas** (300 pixels per inch at A1), then places it on one **594 × 841 mm** PDF page with no margins, headers, footers, or controls. This is a high-resolution raster artwork inside a PDF, not a vector PDF. Export always includes all four sports, regardless of current highlighting.
+**Export A1 PDF** uses your installed Chrome in headless mode through `puppeteer-core`, with the current settings. The **Print bleed · 3 mm** toggle is on by default, including for older saved settings. It draws a **7087 × 10004 px canvas** at 300 dpi on a **600 × 847 mm** page, extending the background 3 mm beyond every edge without resizing the composition. The PDF embeds an exact **594 × 841 mm A1 TrimBox**, inset 3 mm, and a **600 × 847 mm BleedBox/MediaBox** so the printer knows where to cut. With bleed off, the canvas is **7016 × 9933 px** and all PDF boxes are A1. No headers, footers, controls, or visible crop marks are added; the printer can generate cutting marks from the TrimBox. This is a high-resolution raster artwork inside a PDF, not a vector PDF. Export always includes all four sports, regardless of current highlighting.
 
 Chrome is detected on macOS and common Linux paths; set `CHROME_PATH` for another installation. No browser download is required. The local server handles one PDF export at a time.
 
@@ -116,11 +116,11 @@ bun run export:pdf --settings /path/to/movement-settings.json --output output/pd
 
 The CLI saves the PDF and a small PNG preview under `output/pdf/`. The default deliverable is `output/pdf/movement-2016-2025-A1.pdf`.
 
-For printing, use **actual size / 100%** on A1, with scaling disabled. The PDF already includes the warm paper color. Ask the printer to use the supplied page dimensions and provide a color proof on the intended stock; this browser export is RGB, without a CMYK conversion, bleed, or PDF/X profile. Those can be prepared by the printer if needed.
+For printing, use **actual size / 100%**, with scaling disabled. With bleed enabled, print on stock larger than A1 and trim to the embedded A1 boundary. The PDF already includes the warm paper color. Ask the printer to use the supplied page dimensions and provide a color proof on the intended stock; this browser export is RGB, without a CMYK conversion or PDF/X profile. Those can be prepared by the printer if needed.
 
-**PNG** saves the same full-resolution artwork. Canvas PNG metadata can report 96 dpi even though the pixel dimensions are correct: place it at **594 × 841 mm** when printing. Prefer the PDF when physical page dimensions matter.
+**PNG** saves the same full-resolution artwork. Canvas PNG metadata can report 96 dpi even though the pixel dimensions are correct: place it at **600 × 847 mm** with bleed on or **594 × 841 mm** with bleed off. PNG does not carry PDF trim boundaries. Prefer the PDF when physical page dimensions matter.
 
-Browser **Print** is also supported: the canvas redraws at 300 dpi before printing, and `@page` declares A1. Choose A1/custom 594 × 841 mm paper, no margins, no headers/footers, and background graphics. The built-in export is more reproducible because it sets these explicitly. The static `dist/` build supports browser printing and PNG, while one-click PDF requires the Bun server.
+Browser **Print** is also supported: the canvas redraws at 300 dpi before printing, and `@page` declares the selected dimensions. Choose custom 600 × 847 mm paper with bleed on, or A1 594 × 841 mm with bleed off, no margins, no headers/footers, and background graphics. The built-in PDF export also embeds the trim and bleed boxes; browser Print does not guarantee those boundaries. The static `dist/` build supports browser printing and PNG, while one-click PDF requires the Bun server.
 
 ## Check and build
 
@@ -143,3 +143,5 @@ The visual direction follows the request for a data-led composition with repetit
 Export references: [Puppeteer PDF options](https://pptr.dev/api/puppeteer.pdfoptions) for explicit paper dimensions and background printing; [Canvas toBlob](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob) for PNG resolution metadata.
 
 Blend-mode reference: [Canvas globalCompositeOperation](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalCompositeOperation).
+
+Print sizing references: [A1 dimensions](https://www.helloprint.com/en-ie/posters), [Adobe’s standard 3 mm bleed guidance](https://www.adobe.com/learn/indesign/web/set-print-bleed?locale=en). Individual print providers may specify a different bleed.

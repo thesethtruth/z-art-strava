@@ -1,3 +1,4 @@
+import { printDimensions } from "./print";
 import { BLEND_MODES, DEFAULTS, LEGEND_OPTIONS, LIMITS, PALETTES, PAPER, SPORTS, applyPalette, settingsForExport, matchingPalette, normalizeSettings } from "./settings";
 import type { Settings, Sport } from "./settings";
 import { ARTWORK_NAME, YEARS } from "./activity-data";
@@ -247,6 +248,9 @@ for (const key of Object.keys(LEGEND_OPTIONS) as (keyof typeof LEGEND_OPTIONS)[]
 }
 
 function syncControls() {
+  $<HTMLInputElement>("print-bleed").checked = settings.printBleed;
+  $("print-size").textContent = settings.printBleed ? "600 × 847 mm with bleed · trims to A1 (594 × 841 mm)." : "A1 · 594 × 841 mm, no bleed.";
+  configurePrint();
   syncLegendControls();
   for (const tab of variantTabs) {
     const selected = tab.id === `variant-${settings.variant}`;
@@ -284,6 +288,7 @@ function syncControls() {
 for (const key of ["background", "centers", "ink"] as const) {
   $<HTMLInputElement>(key).addEventListener("input", e => { settings[key] = (e.target as HTMLInputElement).value; $("palette-note").textContent = ""; persist(); });
 }
+$("print-bleed").addEventListener("change", e => { settings.printBleed = (e.target as HTMLInputElement).checked; syncControls(); persist(); });
 $("anchor-circles").addEventListener("change", e => { settings.anchorCircles = (e.target as HTMLInputElement).checked; persist(); });
 $("empty-week-points-only").addEventListener("change", e => { settings.emptyWeekPointsOnly = (e.target as HTMLInputElement).checked; persist(); });
 $("stack-mixed").addEventListener("change", e => { settings.stackMixed = (e.target as HTMLInputElement).checked; syncControls(); persist(); });
@@ -380,21 +385,30 @@ $("export-pdf").addEventListener("click", () => busy("export-pdf", async () => {
     throw new Error(detail.error || "Could not export PDF. Check that Chrome is installed.");
   }
   download(await response.blob(), `${ARTWORK_NAME}.pdf`);
-  message("A1 PDF saved · 300 dpi.");
+  message(settings.printBleed ? "A1 PDF saved · 3 mm bleed · A1 trim boundary · 300 dpi." : "A1 PDF saved · no bleed · 300 dpi.");
 }));
 $("export-png").addEventListener("click", () => busy("export-png", async () => {
   message("Preparing full-size PNG…");
   await new Promise(resolve => setTimeout(resolve, 30));
   const output = document.createElement("canvas");
-  drawArtwork(output, settings, 300 / 25.4);
+  drawArtwork(output, settings, 300 / 25.4, null, printDimensions(settings).bleed);
   const blob = await new Promise<Blob | null>(resolve => output.toBlob(resolve, "image/png"));
   if (!blob) throw new Error("This browser could not allocate the full-size image.");
   download(blob, `${ARTWORK_NAME}-300dpi.png`);
   output.width = output.height = 1;
-  message("PNG saved · 7016 × 9933 pixels.");
+  const size = printDimensions(settings);
+  message(`PNG saved · ${Math.round(size.width * 300 / 25.4)} × ${Math.round(size.height * 300 / 25.4)} pixels${settings.printBleed ? " · 3 mm bleed" : ""}.`);
 }));
 
-window.addEventListener("beforeprint", () => { exporting = true; drawArtwork(canvas, settings, 300 / 25.4); });
+function configurePrint() {
+  const size = printDimensions(settings);
+  let style = document.getElementById("print-page-size");
+  if (!style) { style = document.createElement("style"); style.id = "print-page-size"; document.head.append(style); }
+  style.textContent = `@page { size: ${size.width}mm ${size.height}mm; margin: 0; }`;
+  document.documentElement.style.setProperty("--print-width", `${size.width}mm`);
+  document.documentElement.style.setProperty("--print-height", `${size.height}mm`);
+}
+window.addEventListener("beforeprint", () => { exporting = true; configurePrint(); drawArtwork(canvas, settings, 300 / 25.4, null, printDimensions(settings).bleed); });
 window.addEventListener("afterprint", () => { exporting = exportMode; scheduleRender(); });
 new ResizeObserver(scheduleRender).observe(canvas.parentElement!);
 syncControls();
@@ -409,8 +423,9 @@ const artworkApi = {
     exporting = true;
     document.body.classList.add("exporting");
     settings = normalizeSettings(input);
+    configurePrint();
     await document.fonts.ready;
-    layout = drawArtwork(canvas, settings, Math.max(72, Math.min(300, dpi)) / 25.4);
+    layout = drawArtwork(canvas, settings, Math.max(72, Math.min(300, dpi)) / 25.4, null, printDimensions(settings).bleed);
     return { width: canvas.width, height: canvas.height, marks: layout.marks.length };
   },
 };

@@ -10,7 +10,11 @@ let bounds = page.bounds(for: .mediaBox)
 let widthMm = bounds.width * 25.4 / 72
 let heightMm = bounds.height * 25.4 / 72
 precondition(doc.pageCount == 1, "Expected one PDF page")
-precondition(abs(widthMm - 594) < 0.3 && abs(heightMm - 841) < 0.3, "Expected A1 portrait")
+let trim = page.bounds(for: .trimBox)
+precondition(abs(trim.width * 25.4 / 72 - 594) < 0.01 && abs(trim.height * 25.4 / 72 - 841) < 0.01, "Expected A1 portrait trim")
+let bleed = trim.minX * 25.4 / 72
+precondition(abs(bleed) < 0.01 || abs(bleed - 3) < 0.01, "Expected zero or 3 mm bleed")
+precondition(abs(widthMm - 594 - 2 * bleed) < 0.01 && abs(heightMm - 841 - 2 * bleed) < 0.01, "Unexpected media size")
 let thumbnail = page.thumbnail(of: NSSize(width: 1188, height: 1682), for: .mediaBox)
 guard let tiff = thumbnail.tiffRepresentation,
       let bitmap = NSBitmapImageRep(data: tiff),

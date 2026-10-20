@@ -94,6 +94,8 @@
           <p id="inspection" aria-live="polite">Turn on to explore the marks.</p>
         </section>
         <footer>
+          <label class="toggle" style="margin: 0 0 12px"><span>Print bleed · 3 mm</span><input id="print-bleed" type="checkbox" role="switch" checked aria-describedby="print-size" /></label>
+          <p id="print-size" class="control-hint" style="margin-bottom: 12px"></p>
           <button id="export-pdf" class="primary">Export A1 PDF <span>↓</span></button>
           <div class="secondary-actions"><button id="export-png">PNG</button><button id="save-settings">Export settings</button><button id="load-settings">Import settings</button></div>
           <input id="settings-file" type="file" accept="application/json,.json" hidden />
