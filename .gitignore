@@ -5,3 +5,4 @@ __pycache__
 /data/*
 /plots
 .DS_store
+/.playwright-mcp/*

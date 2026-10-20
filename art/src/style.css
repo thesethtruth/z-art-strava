@@ -38,6 +38,11 @@ h2 { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: .25px; }
 .color-row button { text-align: left; padding: 3px 0; }
 .color-row button.active { text-decoration: underline; text-underline-offset: 4px; }
 .color-row code { font: 9px ui-monospace, monospace; color: #a19b90; text-transform: uppercase; }
+.overlap-controls { margin-top: 24px; }
+.overlap-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; font-size: 10px; }
+.overlap-row label { display: flex; align-items: center; gap: 9px; }
+.overlap-row input[type="color"] { width: 21px; height: 21px; }
+.overlap-row select { max-width: 120px; }
 input[type="color"] { padding: 0; border: 0; width: 19px; height: 19px; background: transparent; cursor: pointer; border-radius: 50%; overflow: hidden; }
 input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 input[type="color"]::-webkit-color-swatch { border: 1px solid #00000008; border-radius: 50%; }
@@ -98,3 +103,5 @@ body.exporting #edit { display: none; }
 .outline-button { display: flex; justify-content: space-between; width: 100%; border: 1px solid #cbc7bc; border-radius: 3px; padding: 8px 10px; font-size: 10px; }
 .outline-button:hover { background: #edeae2; }
 .legend-controls { border-top: 1px solid #e2dfd7; padding-top: 18px; margin-top: 22px; }
+.text-setting { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; font-size: 10px; }
+.text-setting input { width: 100%; box-sizing: border-box; padding: 7px; border: 1px solid #cbc7bc; border-radius: 3px; background: transparent; color: inherit; }

@@ -16,6 +16,9 @@ export const LEGEND_OPTIONS = {
   legendAlign: ["start", "center", "end"],
   legendOrientation: ["horizontal", "vertical"],
   legendFacing: ["left", "right"],
+  legendMarginAlign: ["start", "center", "end"],
+  volumeLegendPosition: ["below", "beside", "opposite"],
+  volumeLegendScale: ["auto", "manual"],
 } as const;
 export type LegendSettings = { [K in keyof typeof LEGEND_OPTIONS]: (typeof LEGEND_OPTIONS)[K][number] };
 export type Settings = {
@@ -23,6 +26,9 @@ export type Settings = {
   centers: string;
   ink: string;
   colors: Record<Sport, string>;
+  overlapEnabled: boolean;
+  overlapColors: Record<Sport, string>;
+  overlapBlends: Record<Sport, BlendMode>;
   variant: "weekday" | "spring";
   springStrength: number;
   collisionStrength: number;
@@ -42,6 +48,10 @@ export type Settings = {
   gridHeight: number;
   centerSize: number;
   emptyWeekPointsOnly: boolean;
+  legendFontSize: number;
+  legendPadding: number;
+  volumeLegendEnabled: boolean;
+  volumeLegendValues: number[];
   blend: BlendMode;
 } & LegendSettings;
 
@@ -50,6 +60,9 @@ export const DEFAULTS: Settings = {
   centers: "#c8c3bc",
   ink: "#7e7871",
   colors: data.meta.colors,
+  overlapEnabled: false,
+  overlapColors: { Rowing: "#257966", "Weight training": "#795692", Cycling: "#ad7026", Running: "#b44848" },
+  overlapBlends: { Rowing: "multiply", "Weight training": "multiply", Cycling: "multiply", Running: "multiply" },
   variant: "weekday",
   springStrength: 0.16,
   collisionStrength: 0.8,
@@ -74,6 +87,13 @@ export const DEFAULTS: Settings = {
   legendAlign: "center",
   legendOrientation: "horizontal",
   legendFacing: "left",
+  legendMarginAlign: "center",
+  legendFontSize: 2.55,
+  legendPadding: 2,
+  volumeLegendEnabled: false,
+  volumeLegendPosition: "below",
+  volumeLegendScale: "auto",
+  volumeLegendValues: [1, 2, 5],
 };
 
 export type Palette = Pick<Settings, "colors" | "background" | "centers" | "ink"> & { id: string; name: string };
@@ -106,6 +126,7 @@ export const LIMITS = {
   opacity: [0.1, 1], blobRadius: [0.5, 6], baseRadius: [0, 12],
   spreadFraction: [0, 1], stackOverlap: [0, 0.5], gridSize: [360, 490],
   gridHeight: [360, GRID.bottom - GRID.top], centerSize: [0, 0.6],
+  legendFontSize: [1.5, 8], legendPadding: [0, 30],
 } as const;
 
 const MODE_FIELDS = {
@@ -151,7 +172,7 @@ export function normalizeSettings(input: unknown): Settings {
   }
   if (raw.mode !== undefined) values.variant = raw.mode;
   const s = values as Partial<Settings> & { dayRadius?: unknown };
-  const result = { ...DEFAULTS, colors: { ...DEFAULTS.colors } };
+  const result = { ...DEFAULTS, colors: { ...DEFAULTS.colors }, overlapColors: { ...DEFAULTS.overlapColors }, overlapBlends: { ...DEFAULTS.overlapBlends }, volumeLegendValues: [...DEFAULTS.volumeLegendValues] };
   // Preserve old radius settings, but never reinterpret millimeters as a fraction.
   // The removed durationRadius and activitySpread fields are deliberately ignored.
   if (s.baseRadius === undefined && typeof s.dayRadius === "number" && Number.isFinite(s.dayRadius)) {
@@ -163,13 +184,17 @@ export function normalizeSettings(input: unknown): Settings {
   for (const sport of SPORTS) {
     const value = s.colors?.[sport];
     if (typeof value === "string" && HEX.test(value)) result.colors[sport] = value;
+    const overlapColor = s.overlapColors?.[sport];
+    if (typeof overlapColor === "string" && HEX.test(overlapColor)) result.overlapColors[sport] = overlapColor;
+    const overlapBlend = s.overlapBlends?.[sport];
+    if (BLEND_MODES.some(([mode]) => mode === overlapBlend)) result.overlapBlends[sport] = overlapBlend!;
   }
   for (const key of Object.keys(LIMITS) as (keyof typeof LIMITS)[]) {
     const value = s[key];
     const [lo, hi] = LIMITS[key];
     if (typeof value === "number" && Number.isFinite(value)) result[key] = Math.min(hi, Math.max(lo, value));
   }
-  for (const key of ["anchorCircles", "stackMixed", "emptyWeekPointsOnly"] as const) {
+  for (const key of ["anchorCircles", "stackMixed", "emptyWeekPointsOnly", "overlapEnabled", "volumeLegendEnabled"] as const) {
     if (typeof s[key] === "boolean") result[key] = s[key];
   }
   if (s.variant === "spring" || s.variant === "weekday") result.variant = s.variant;
@@ -179,6 +204,11 @@ export function normalizeSettings(input: unknown): Settings {
     const value = values[key];
     if (typeof value === "string" && (choices as readonly string[]).includes(value)) Object.assign(result, { [key]: value });
   }
+  if (Array.isArray(s.volumeLegendValues)) {
+    const valid = s.volumeLegendValues.filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 100);
+    if (valid.length) result.volumeLegendValues = [...new Set(valid)].sort((a, b) => a - b).slice(0, 6);
+  }
+  if (result.legendAlign === "center" && result.volumeLegendPosition === "opposite") result.volumeLegendPosition = "below";
   return result;
 }
 

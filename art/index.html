@@ -38,6 +38,12 @@
           </div>
           <div id="color-sliders"></div>
           <label class="select-row"><span>Blending</span><select id="blend"></select></label>
+          <div class="overlap-controls">
+            <h2>Between-week overlaps</h2>
+            <label class="toggle"><span>Use overlap colors</span><input id="overlap-enabled" type="checkbox" role="switch" /></label>
+            <p class="control-hint">The week with more total hours controls the overlap, using its touching bubble’s sport color and blend mode. Opacity also applies here.</p>
+            <div id="overlap-palette"></div>
+          </div>
         </section>
         <section id="panel-layout" class="control-section" role="tabpanel" aria-labelledby="tab-layout">
           <h2>Composition</h2>
@@ -66,11 +72,21 @@
           <label class="toggle"><span>Week points only on empty weeks</span><input id="empty-week-points-only" type="checkbox" role="switch" /></label>
           <div class="legend-controls">
             <h2>Legend placement</h2>
-            <label class="select-row"><span>Grid edge</span><select id="legendEdge"><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select></label>
+            <label class="select-row"><span>Page edge</span><select id="legendEdge"><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select></label>
             <label class="select-row"><span>Position</span><select id="legendAlign"><option value="start">Left</option><option value="center">Center</option><option value="end">Right</option></select></label>
             <label class="select-row"><span>Orientation</span><select id="legendOrientation"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select></label>
             <label id="legend-facing-control" class="select-row"><span>Facing</span><select id="legendFacing"><option value="left">Left · reads upward</option><option value="right">Right · reads downward</option></select></label>
-            <p class="control-hint">Position follows the selected grid edge and stays aligned as you change the grid width and height.</p>
+            <label class="select-row"><span>Vertical alignment</span><select id="legendMarginAlign"><option value="start">Top</option><option value="center">Middle</option><option value="end">Bottom</option></select></label>
+            <div id="legend-sliders"></div>
+            <label class="toggle"><span>Volume size legend</span><input id="volume-legend-enabled" type="checkbox" role="switch" /></label>
+            <div id="volume-legend-controls" hidden>
+              <label class="select-row"><span>Volume placement</span><select id="volumeLegendPosition"><option value="below">Below color legend</option><option value="beside">Next to color legend</option><option value="opposite">Opposite end</option></select></label>
+              <label class="select-row"><span>Volume scale</span><select id="volumeLegendScale"><option value="auto">Automatic intervals</option><option value="manual">Manual list</option></select></label>
+              <label id="volume-values-control" class="text-setting" hidden><span>Volumes in hours</span><input id="volume-legend-values" type="text" inputmode="decimal" placeholder="0.5, 1, 2, 5" aria-describedby="volume-values-help" /></label>
+              <p id="volume-values-help" class="control-hint"></p>
+            </div>
+            <p id="legend-fit-help" class="control-hint" role="status"></p>
+            <p class="control-hint">Top, Middle, and Bottom follow the legend’s orientation. The color and volume sections align together as one block. Opposite end places them separately.</p>
           </div>
         </section>
         <section class="control-section inspect-section">

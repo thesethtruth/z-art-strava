@@ -2,6 +2,7 @@ import { BLEND_MODES, DEFAULTS, LEGEND_OPTIONS, LIMITS, PALETTES, PAPER, SPORTS,
 import type { Settings, Sport } from "./settings";
 import { ARTWORK_NAME, YEARS } from "./activity-data";
 import { drawArtwork } from "./artwork";
+import { formatVolume, legendLayout, parseVolumeValues, volumeValues } from "./legend";
 import type { Highlight } from "./artwork";
 import { randomPalette } from "./random-palette";
 import type { ColorMood } from "./random-palette";
@@ -25,6 +26,11 @@ function render() {
   if (exporting) return;
   const pixelsPerMm = Math.max(1, Math.min(4, canvas.getBoundingClientRect().width * (window.devicePixelRatio || 1) / PAPER.width));
   layout = drawArtwork(canvas, settings, pixelsPerMm, highlight);
+  const ctx = canvas.getContext("2d")!;
+  ctx.save(); ctx.font = `400 ${settings.legendFontSize}px Arial, sans-serif`;
+  const fits = legendLayout(settings, text => ctx.measureText(text).width).every(group => group.placement.fits);
+  ctx.restore();
+  $("legend-fit-help").textContent = fits ? "" : "The legend needs more margin space. Reduce the grid size, padding, or font size; volume circles retain their true artwork scale.";
 }
 function scheduleRender() {
   cancelAnimationFrame(frame);
@@ -66,6 +72,29 @@ function syncPresetSelection() {
 for (const [value, label] of BLEND_MODES) {
   $<HTMLSelectElement>("blend").add(new Option(label, value));
 }
+for (const sport of SPORTS) {
+  const row = document.createElement("div");
+  row.className = "overlap-row";
+  const label = document.createElement("label");
+  label.textContent = sport;
+  const color = document.createElement("input");
+  color.type = "color";
+  color.dataset.overlapSport = sport;
+  color.setAttribute("aria-label", `${sport} overlap color`);
+  label.prepend(color);
+  const blend = document.createElement("select");
+  blend.dataset.overlapSport = sport;
+  blend.setAttribute("aria-label", `${sport} overlap blending`);
+  for (const [value, title] of BLEND_MODES) blend.add(new Option(title, value));
+  color.addEventListener("input", () => { settings.overlapColors[sport] = color.value; persist(); });
+  blend.addEventListener("change", () => { settings.overlapBlends[sport] = blend.value as Settings["blend"]; persist(); });
+  row.append(label, blend);
+  $("overlap-palette").append(row);
+}
+$("overlap-enabled").addEventListener("change", e => {
+  settings.overlapEnabled = (e.target as HTMLInputElement).checked;
+  syncControls(); persist();
+});
 $("randomize-colors").addEventListener("click", () => {
   const preset = randomPalette($<HTMLSelectElement>("color-mood").value as ColorMood, settings.opacity);
   settings = applyPalette(settings, preset);
@@ -110,6 +139,8 @@ const sliderDefinitions = [
   ["gridSize", "Grid width", 5, "mm", "grid"],
   ["gridHeight", "Grid height", 1, "mm", "grid"],
   ["centerSize", "Week point size", 0.01, "mm", "grid"],
+  ["legendFontSize", "Legend font size", 0.05, "mm", "legend"],
+  ["legendPadding", "Legend padding · Y", 0.5, "mm", "legend"],
   ["springStrength", "Spring strength", 0.01, "", "spring"],
   ["collisionStrength", "Collision pressure", 0.05, "", "spring"],
   ["clusterOverlap", "Allowed overlap", 0.05, "", "spring"],
@@ -173,15 +204,41 @@ $("reshuffle").addEventListener("click", () => {
 });
 
 function syncLegendControls() {
-  const verticalEdge = settings.legendEdge === "left" || settings.legendEdge === "right";
+  const side = settings.legendEdge === "left" || settings.legendEdge === "right";
+  $("legendPadding-control").querySelector(".slider-heading > span")!.textContent = `Legend padding · ${side ? "X" : "Y"}`;
+  const vertical = settings.legendOrientation === "vertical";
   const align = $<HTMLSelectElement>("legendAlign");
-  align.options[0]!.text = verticalEdge ? "Top" : "Left";
-  align.options[2]!.text = verticalEdge ? "Bottom" : "Right";
+  align.options[0]!.text = vertical ? "Top" : "Left";
+  align.options[2]!.text = vertical ? "Bottom" : "Right";
   for (const key of Object.keys(LEGEND_OPTIONS) as (keyof typeof LEGEND_OPTIONS)[]) {
     $<HTMLSelectElement>(key).value = settings[key];
   }
   $("legend-facing-control").hidden = settings.legendOrientation !== "vertical";
+  $<HTMLInputElement>("volume-legend-enabled").checked = settings.volumeLegendEnabled;
+  $("volume-legend-controls").hidden = !settings.volumeLegendEnabled;
+  $<HTMLSelectElement>("volumeLegendPosition").options[2]!.disabled = settings.legendAlign === "center";
+  $("volume-values-control").hidden = settings.volumeLegendScale !== "manual";
+  $<HTMLInputElement>("volume-legend-values").value = settings.volumeLegendValues.join(", ");
+  $("volume-legend-values").removeAttribute("aria-invalid");
+  $("volume-values-help").textContent = settings.volumeLegendScale === "auto"
+    ? `Automatic: ${volumeValues(settings).map(formatVolume).join(" · ")}. Circle areas match the artwork’s hours scale.`
+    : "Enter up to six positive hour values (maximum 100 each), separated by commas. Circle areas match the artwork.";
 }
+$("volume-legend-enabled").addEventListener("change", e => {
+  settings.volumeLegendEnabled = (e.target as HTMLInputElement).checked;
+  syncLegendControls(); persist();
+});
+$("volume-legend-values").addEventListener("change", e => {
+  const input = e.target as HTMLInputElement;
+  const values = parseVolumeValues(input.value);
+  if (!values) {
+    input.setAttribute("aria-invalid", "true");
+    $("volume-values-help").textContent = "Use one to six positive numbers up to 100, separated by commas. The previous scale remains active.";
+    return;
+  }
+  settings.volumeLegendValues = values;
+  syncLegendControls(); persist();
+});
 for (const key of Object.keys(LEGEND_OPTIONS) as (keyof typeof LEGEND_OPTIONS)[]) {
   $(key).addEventListener("change", event => {
     settings = normalizeSettings({ ...settings, [key]: (event.target as HTMLSelectElement).value });
@@ -204,7 +261,11 @@ function syncControls() {
   for (const sport of SPORTS) {
     document.querySelector<HTMLInputElement>(`input[data-sport="${sport}"]`)!.value = settings.colors[sport];
     document.querySelector<HTMLElement>(`code[data-sport="${sport}"]`)!.textContent = settings.colors[sport];
+    document.querySelector<HTMLInputElement>(`input[data-overlap-sport="${sport}"]`)!.value = settings.overlapColors[sport];
+    document.querySelector<HTMLSelectElement>(`select[data-overlap-sport="${sport}"]`)!.value = settings.overlapBlends[sport];
   }
+  $<HTMLInputElement>("overlap-enabled").checked = settings.overlapEnabled;
+  $("overlap-palette").hidden = !settings.overlapEnabled;
   for (const key of ["background", "centers", "ink"] as const) $<HTMLInputElement>(key).value = settings[key];
   for (const [key, , , unit] of sliderDefinitions) {
     $<HTMLInputElement>(key).value = String(settings[key]);

@@ -7,10 +7,11 @@ import { placeDay } from "./weekday-layout";
 import { placeClusters } from "./spring-layout";
 import { drawLegend } from "./legend";
 import { gridBounds } from "./grid";
+import { drawOverlaps } from "./overlap";
 
 let cachedLayout: { key: string; layout: { weeks: Week[]; marks: Mark[] } } | undefined;
 export function makeLayout(settings: Settings) {
-  const key = JSON.stringify([settings.variant, ...Object.keys(LIMITS).filter(key => key !== "opacity" && key !== "centerSize").map(key => settings[key as keyof Settings]), settings.anchorCircles, settings.stackMixed]);
+  const key = JSON.stringify([settings.variant, ...Object.keys(LIMITS).filter(key => key !== "opacity" && key !== "centerSize" && !key.startsWith("legend")).map(key => settings[key as keyof Settings]), settings.anchorCircles, settings.stackMixed]);
   if (cachedLayout?.key === key) return cachedLayout.layout;
   const bounds = gridBounds(settings);
   const x = scaleLinear().domain([YEARS[0]!, YEARS.at(-1)!]).range([bounds.left, bounds.right]);
@@ -79,16 +80,17 @@ export function drawArtwork(canvas: HTMLCanvasElement, settings: Settings, pixel
     if (previous) { previous.width = previous.height = 1; activityLayers.delete(canvas); }
   }
   paint.globalCompositeOperation = settings.blend;
+  const focused = (mark: Mark) => (!highlight?.sport || mark.sport === highlight.sport)
+    && (!highlight?.week || (mark.year === highlight.week.year && mark.row === highlight.week.row));
   for (const mark of layout.marks) {
-    const focused = (!highlight?.sport || mark.sport === highlight.sport)
-      && (!highlight?.week || (mark.year === highlight.week.year && mark.row === highlight.week.row));
-    paint.globalAlpha = settings.opacity * (focused ? 1 : 0.1);
+    paint.globalAlpha = settings.opacity * (focused(mark) ? 1 : 0.1);
     paint.fillStyle = settings.colors[mark.sport];
     paint.beginPath();
     paint.arc(mark.x, mark.y, mark.r, 0, Math.PI * 2);
     paint.fill();
   }
   if (layer) { ctx.globalAlpha = 1; ctx.drawImage(layer, 0, 0, PAPER.width, PAPER.height); }
+  drawOverlaps(ctx, layout.marks, settings, focused);
 
   // The legend shares the same placement in preview, PNG, and PDF.
   drawLegend(ctx, settings, highlight?.sport);
