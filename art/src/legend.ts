@@ -120,7 +120,8 @@ export function legendLayout(settings: Settings, measure: (text: string) => numb
   return [{ blocks, width, height, placement: legendPlacement(width, settings, height) }];
 }
 
-export function drawLegend(ctx: CanvasRenderingContext2D, settings: Settings, focusedSport?: Sport) {
+export type SwatchPainter = (sport: Sport, x: number, y: number, radius: number, alpha: number) => void;
+export function drawLegend(ctx: CanvasRenderingContext2D, settings: Settings, focusedSport?: Sport, paintSwatch?: SwatchPainter) {
   ctx.save();
   ctx.globalCompositeOperation = "source-over";
   ctx.font = `400 ${settings.legendFontSize}px Arial, sans-serif`;
@@ -136,7 +137,9 @@ export function drawLegend(ctx: CanvasRenderingContext2D, settings: Settings, fo
       const y = block.y + cell.y + cell.height / 2;
       const focused = !cell.sport || !focusedSport || cell.sport === focusedSport;
       ctx.beginPath(); ctx.arc(x + cell.radius, y, cell.radius, 0, Math.PI * 2);
-      if (cell.sport) {
+      if (cell.sport && paintSwatch) {
+        paintSwatch(cell.sport, x + cell.radius, y, cell.radius, focused ? 1 : 0.2);
+      } else if (cell.sport) {
         ctx.globalAlpha = settings.opacity * (focused ? 1 : 0.2);
         ctx.fillStyle = settings.colors[cell.sport]; ctx.fill();
       } else {

@@ -1,4 +1,6 @@
 import data from "../data/daily-activities.json";
+import { DISTRIBUTIONS } from "./distributions";
+import type { Distribution } from "./distributions";
 
 export const PAPER = { width: 594, height: 841 } as const;
 // Maximum vertical extent, with equal paper margins above and below.
@@ -21,6 +23,26 @@ export const LEGEND_OPTIONS = {
   volumeLegendScale: ["auto", "manual"],
 } as const;
 export type LegendSettings = { [K in keyof typeof LEGEND_OPTIONS]: (typeof LEGEND_OPTIONS)[K][number] };
+export const PAINT_STYLES = [["flat", "Flat"], ["watercolor", "Watercolor"]] as const;
+export type PaintStyle = (typeof PAINT_STYLES)[number][0];
+export const TEXTURES = [
+  ["wash", "Wash"], ["stripes", "Stripes"], ["dots", "Speckle"], ["bloom", "Bloom"],
+  ["outline", "Outline"], ["drybrush", "Dry brush"], ["bleed", "Bleed"],
+] as const;
+export type Texture = (typeof TEXTURES)[number][0];
+// Session rules, checked top to bottom: the first band a day falls into picks its
+// texture odds. Thresholds are per-sport percentiles for effort and variability,
+// meters climbed per hour, or hours on that day.
+export const SESSION_BANDS = [
+  ["hard", "Hard"], ["intervals", "Intervals"], ["climbing", "Climbing"],
+  ["long", "Long day"], ["easy", "Easy"], ["steady", "Steady"],
+] as const;
+export type SessionBand = (typeof SESSION_BANDS)[number][0];
+export type TextureRule = { threshold: number; odds: Record<Texture, number> };
+export const RULE_LIMITS: Record<SessionBand, readonly [number, number]> = {
+  hard: [0.5, 1], intervals: [0.5, 1], climbing: [100, 1500], long: [1, 12], easy: [0, 0.5], steady: [0, 0],
+};
+export const ODDS_LIMIT = [0, 100] as const;
 export type Settings = {
   printBleed: boolean;
   background: string;
@@ -54,6 +76,31 @@ export type Settings = {
   volumeLegendEnabled: boolean;
   volumeLegendValues: number[];
   blend: BlendMode;
+  paintStyle: PaintStyle;
+  paintBlend: BlendMode;
+  paintSeed: number;
+  shapeDistribution: Distribution;
+  irregularity: number;
+  elongation: number;
+  shapeVariance: number;
+  lobes: number;
+  edgeRoughness: number;
+  orientation: number;
+  orientationJitter: number;
+  wetness: number;
+  edgeDarkening: number;
+  mottling: number;
+  pooling: number;
+  granulation: number;
+  paperGrain: number;
+  spotRate: number;
+  spotStrength: number;
+  lightnessJitter: number;
+  saturationJitter: number;
+  funk: number;
+  dataDrive: number;
+  textureMix: Record<Texture, number>;
+  textureRules: Record<SessionBand, TextureRule>;
 } & LegendSettings;
 
 export const DEFAULTS: Settings = {
@@ -96,6 +143,38 @@ export const DEFAULTS: Settings = {
   volumeLegendPosition: "below",
   volumeLegendScale: "auto",
   volumeLegendValues: [1, 2, 5],
+  paintStyle: "flat",
+  paintBlend: "multiply",
+  paintSeed: 1,
+  shapeDistribution: "gamma",
+  irregularity: 0.09,
+  elongation: 0.3,
+  shapeVariance: 0.6,
+  lobes: 3,
+  edgeRoughness: 0.25,
+  orientation: 90,
+  orientationJitter: 0.35,
+  wetness: 0.35,
+  edgeDarkening: 0.45,
+  mottling: 0.45,
+  pooling: 0.4,
+  granulation: 0.15,
+  paperGrain: 0,
+  spotRate: 0.45,
+  spotStrength: 0.8,
+  lightnessJitter: 0.4,
+  saturationJitter: 0.4,
+  funk: 0.2,
+  dataDrive: 1,
+  textureMix: { wash: 2, stripes: 0.12, dots: 0.45, bloom: 0.6, outline: 0.6, drybrush: 0.45, bleed: 0.5 },
+  textureRules: {
+    hard: { threshold: 0.8, odds: { wash: 5, stripes: 0, dots: 45, bloom: 0, outline: 0, drybrush: 0, bleed: 50 } },
+    intervals: { threshold: 0.95, odds: { wash: 10, stripes: 80, dots: 10, bloom: 0, outline: 0, drybrush: 0, bleed: 0 } },
+    climbing: { threshold: 350, odds: { wash: 20, stripes: 0, dots: 0, bloom: 0, outline: 0, drybrush: 80, bleed: 0 } },
+    long: { threshold: 4, odds: { wash: 20, stripes: 0, dots: 0, bloom: 80, outline: 0, drybrush: 0, bleed: 0 } },
+    easy: { threshold: 0.2, odds: { wash: 15, stripes: 0, dots: 0, bloom: 0, outline: 85, drybrush: 0, bleed: 0 } },
+    steady: { threshold: 0, odds: { wash: 90, stripes: 0, dots: 0, bloom: 5, outline: 0, drybrush: 5, bleed: 0 } },
+  },
 };
 
 export type Palette = Pick<Settings, "colors" | "background" | "centers" | "ink"> & { id: string; name: string };
@@ -110,6 +189,8 @@ export const PALETTES: Palette[] = [
   palette("dusk", "Dusk", ["#7666a6", "#b38dac", "#db917d", "#5c8f9a"], "#f7f0f2", "#cbc1c8", "#796c7d"),
   palette("cyanotype", "Cyanotype", ["#285d91", "#658db2", "#85b6c7", "#454e7c"], "#f0f4f3", "#c1ccce", "#687c86"),
   palette("risograph", "Risograph", ["#337cc1", "#ed7868", "#e2b63d", "#469b8a"], "#faf4e8", "#c9c0ae", "#7d7566"),
+  // Pigments read from the reference watercolor: indigo, raw sienna, sap green, peach.
+  palette("aquarelle", "Aquarelle", ["#41609f", "#d5a03c", "#3f8a73", "#e2906f"], "#f7f4ee", "#cdc8bf", "#6f6a62"),
 ];
 
 export function applyPalette(settings: Settings, preset: Palette): Settings {
@@ -122,6 +203,14 @@ export function matchingPalette(settings: Settings) {
 }
 
 const HEX = /^#[\da-f]{6}$/i;
+// Paint controls never move a bubble; the layout cache ignores them.
+export const PAINT_LIMITS = {
+  paintSeed: [1, 1_000_000], irregularity: [0, 0.4], elongation: [0, 1.5], shapeVariance: [0, 1.5],
+  lobes: [2, 8], edgeRoughness: [0, 1.5], orientation: [0, 180], orientationJitter: [0, 1],
+  wetness: [0, 1], edgeDarkening: [0, 1], mottling: [0, 1], pooling: [0, 1], granulation: [0, 1], paperGrain: [0, 1],
+  spotRate: [0, 2], spotStrength: [0, 2], lightnessJitter: [0, 1], saturationJitter: [0, 1], funk: [0, 1], dataDrive: [0, 1],
+} as const;
+export const TEXTURE_LIMIT = [0, 3] as const;
 export const LIMITS = {
   springStrength: [0.01, 0.8], collisionStrength: [0, 1], clusterOverlap: [0, 0.8],
   outerRadius: [0, 28], dominance: [0, 1], damping: [0.1, 0.9], clusterSeed: [1, 1_000_000],
@@ -129,6 +218,7 @@ export const LIMITS = {
   spreadFraction: [0, 1], stackOverlap: [0, 0.5], gridSize: [360, 490],
   gridHeight: [360, GRID.bottom - GRID.top], centerSize: [0, 0.6],
   legendFontSize: [1.5, 8], legendPadding: [0, 30],
+  ...PAINT_LIMITS,
 } as const;
 
 const MODE_FIELDS = {
@@ -174,7 +264,7 @@ export function normalizeSettings(input: unknown): Settings {
   }
   if (raw.mode !== undefined) values.variant = raw.mode;
   const s = values as Partial<Settings> & { dayRadius?: unknown };
-  const result = { ...DEFAULTS, colors: { ...DEFAULTS.colors }, overlapColors: { ...DEFAULTS.overlapColors }, overlapBlends: { ...DEFAULTS.overlapBlends }, volumeLegendValues: [...DEFAULTS.volumeLegendValues] };
+  const result = { ...DEFAULTS, colors: { ...DEFAULTS.colors }, overlapColors: { ...DEFAULTS.overlapColors }, overlapBlends: { ...DEFAULTS.overlapBlends }, volumeLegendValues: [...DEFAULTS.volumeLegendValues], textureMix: { ...DEFAULTS.textureMix }, textureRules: structuredClone(DEFAULTS.textureRules) };
   // Preserve old radius settings, but never reinterpret millimeters as a fraction.
   // The removed durationRadius and activitySpread fields are deliberately ignored.
   if (s.baseRadius === undefined && typeof s.dayRadius === "number" && Number.isFinite(s.dayRadius)) {
@@ -201,7 +291,26 @@ export function normalizeSettings(input: unknown): Settings {
   }
   if (s.variant === "spring" || s.variant === "weekday") result.variant = s.variant;
   result.clusterSeed = Math.round(result.clusterSeed);
+  result.paintSeed = Math.round(result.paintSeed);
   if (BLEND_MODES.some(([mode]) => mode === s.blend)) result.blend = s.blend!;
+  if (BLEND_MODES.some(([mode]) => mode === s.paintBlend)) result.paintBlend = s.paintBlend!;
+  if (PAINT_STYLES.some(([style]) => style === s.paintStyle)) result.paintStyle = s.paintStyle!;
+  if (DISTRIBUTIONS.some(([name]) => name === s.shapeDistribution)) result.shapeDistribution = s.shapeDistribution!;
+  const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
+  for (const [texture] of TEXTURES) {
+    const value = s.textureMix?.[texture];
+    if (finite(value)) result.textureMix[texture] = Math.min(TEXTURE_LIMIT[1], Math.max(TEXTURE_LIMIT[0], value));
+  }
+  for (const [band] of SESSION_BANDS) {
+    const rule = s.textureRules?.[band];
+    if (!rule || typeof rule !== "object") continue;
+    const [lo, hi] = RULE_LIMITS[band];
+    if (finite(rule.threshold)) result.textureRules[band].threshold = Math.min(hi, Math.max(lo, rule.threshold));
+    for (const [texture] of TEXTURES) {
+      const value = rule.odds?.[texture];
+      if (finite(value)) result.textureRules[band].odds[texture] = Math.min(ODDS_LIMIT[1], Math.max(ODDS_LIMIT[0], value));
+    }
+  }
   for (const [key, choices] of Object.entries(LEGEND_OPTIONS)) {
     const value = values[key];
     if (typeof value === "string" && (choices as readonly string[]).includes(value)) Object.assign(result, { [key]: value });

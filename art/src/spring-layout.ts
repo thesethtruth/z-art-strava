@@ -60,6 +60,7 @@ export function placeClusters(weeks: Week[], settings: Settings): Mark[] {
   }
   return nodes.map(node => ({
     date: node.date, sport: node.sport, hours: node.hours, activities: node.activities,
+    effort: node.effort, variability: node.variability, climb: node.climb, if: node.if, hr: node.hr,
     r: node.r, x: node.x, y: node.y, year: node.year, row: node.row,
   }));
 }

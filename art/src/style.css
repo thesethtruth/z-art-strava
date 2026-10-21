@@ -105,3 +105,18 @@ body.exporting #edit { display: none; }
 .legend-controls { border-top: 1px solid #e2dfd7; padding-top: 18px; margin-top: 22px; }
 .text-setting { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; font-size: 10px; }
 .text-setting input { width: 100%; box-sizing: border-box; padding: 7px; border: 1px solid #cbc7bc; border-radius: 3px; background: transparent; color: inherit; }
+.paint-group { border-top: 1px solid #e2dfd7; padding-top: 16px; margin-top: 20px; }
+h3 { margin: 0; font-size: 10px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; color: #7d776c; }
+#repaint { margin-top: 14px; }
+#distribution-preview { display: block; width: 100%; height: 46px; margin-top: 12px; }
+.texture-rules { display: grid; gap: 3px; margin-top: 14px; }
+.rule-row { display: grid; grid-template-columns: 1fr auto; gap: 5px 8px; align-items: baseline; text-align: left; padding: 6px 7px 7px; border: 1px solid transparent; border-radius: 3px; font-size: 10px; }
+.rule-row:hover { background: #edeae2; }
+.rule-row[aria-pressed="true"] { border-color: #bbb8aa; background: #eeeae2; }
+.rule-meta { font-size: 9px; color: #938b7f; font-variant-numeric: tabular-nums; }
+.rule-bar { grid-column: 1 / -1; display: flex; height: 6px; border-radius: 2px; overflow: hidden; background: #e4e0d8; }
+.rule-bar span { display: block; height: 100%; }
+.rule-editor { margin-top: 14px; padding: 2px 0 0; }
+h4 { margin: 0; font-size: 10px; font-weight: 500; }
+.texture-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.texture-key { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 9px; font-size: 9px; color: #938b7f; }

@@ -37,3 +37,29 @@ test("old flat settings files still load and nested imports use the same validat
   expect(invalid.stackMixed).toBe(true);
   expect(invalid.background).toBe(DEFAULTS.background);
 });
+
+test("watercolor settings validate, clamp, and round-trip through settings files", () => {
+  const original = normalizeSettings({
+    ...DEFAULTS, paintStyle: "watercolor", paintBlend: "soft-light", paintSeed: 12.6, shapeDistribution: "weibull",
+    irregularity: 0.25, funk: 0.7, orientation: 45, textureMix: { ...DEFAULTS.textureMix, stripes: 2.5, bleed: 0 },
+    textureRules: { ...DEFAULTS.textureRules, climbing: { threshold: 600, odds: { ...DEFAULTS.textureRules.climbing.odds, stripes: 35 } } },
+  });
+  expect(original.paintSeed).toBe(13);
+  expect(normalizeSettings(JSON.parse(JSON.stringify(settingsForExport(original))))).toEqual(original);
+  const invalid = normalizeSettings({
+    paintStyle: "oil", paintBlend: "difference", shapeDistribution: "cauchy", funk: 4, irregularity: -1,
+    textureMix: { wash: 9, stripes: "many", dots: -2 },
+    textureRules: { hard: { threshold: 0.1, odds: { bleed: 400, dots: "lots" } }, long: "always", easy: { threshold: 0.9 } },
+  });
+  expect(invalid.paintStyle).toBe("flat");
+  expect(invalid.paintBlend).toBe("multiply");
+  expect(invalid.shapeDistribution).toBe(DEFAULTS.shapeDistribution);
+  expect(invalid.funk).toBe(1);
+  expect(invalid.irregularity).toBe(0);
+  expect(invalid.textureMix).toEqual({ ...DEFAULTS.textureMix, wash: 3, dots: 0 });
+  expect(invalid.textureRules.hard).toEqual({ threshold: 0.5, odds: { ...DEFAULTS.textureRules.hard.odds, bleed: 100 } });
+  expect(invalid.textureRules.long).toEqual(DEFAULTS.textureRules.long);
+  expect(invalid.textureRules.easy.threshold).toBe(0.5);
+  // Files from before the paint controls keep their flat circles.
+  expect(normalizeSettings({ colors: DEFAULTS.colors }).paintStyle).toBe("flat");
+});

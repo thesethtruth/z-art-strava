@@ -19,6 +19,7 @@
         <div class="intro"><h1>Movement</h1><p>2016 — 2025 <span>·</span> A1</p></div>
         <nav class="control-tabs" role="tablist" aria-label="Artwork settings">
           <button id="tab-layout" role="tab" aria-controls="panel-layout" aria-selected="true">Layout</button>
+          <button id="tab-paint" role="tab" aria-controls="panel-paint" aria-selected="false" tabindex="-1">Paint</button>
           <button id="tab-color" role="tab" aria-controls="panel-color" aria-selected="false" tabindex="-1">Color</button>
           <button id="tab-grid" role="tab" aria-controls="panel-grid" aria-selected="false" tabindex="-1">Grid</button>
         </nav>
@@ -37,8 +38,9 @@
             <label>Legend<input id="ink" type="color" aria-label="Legend text color" /></label>
           </div>
           <div id="color-sliders"></div>
-          <label class="select-row"><span>Blending</span><select id="blend"></select></label>
-          <div class="overlap-controls">
+          <label id="blend-control" class="select-row"><span>Blending</span><select id="blend"></select></label>
+          <p id="watercolor-color-help" class="control-hint" hidden>Watercolor marks glaze over one another. Glazing, pigment, and funk are in the Paint tab; Opacity becomes the pigment load.</p>
+          <div id="overlap-section" class="overlap-controls">
             <h2>Between-week overlaps</h2>
             <label class="toggle"><span>Use overlap colors</span><input id="overlap-enabled" type="checkbox" role="switch" /></label>
             <p class="control-hint">The week with more total hours controls the overlap, using its touching bubble’s sport color and blend mode. Opacity also applies here.</p>
@@ -63,6 +65,56 @@
             <div id="spring-sliders"></div>
             <button id="reshuffle" class="outline-button">Reshuffle arrangement <span aria-hidden="true">↻</span></button>
             <p class="control-hint">Spring strength pulls bubbles toward their own week center. Collisions also act between neighboring weeks, letting clusters turn and reshape into open space. Size dominance keeps larger bubbles closer in.</p>
+          </div>
+        </section>
+        <section id="panel-paint" class="control-section" role="tabpanel" aria-labelledby="tab-paint" hidden>
+          <h2>Paint</h2>
+          <div class="variant-tabs" role="tablist" aria-label="Paint style">
+            <button id="paint-flat" role="tab" aria-selected="true" aria-controls="flat-settings">Flat</button>
+            <button id="paint-watercolor" role="tab" aria-selected="false" tabindex="-1" aria-controls="watercolor-settings">Watercolor</button>
+          </div>
+          <div id="flat-settings" role="tabpanel" aria-labelledby="paint-flat">
+            <p class="control-hint">Translucent circles. Opacity, blending, and between-week overlap colors are in the Color tab.</p>
+          </div>
+          <div id="watercolor-settings" role="tabpanel" aria-labelledby="paint-watercolor" hidden>
+            <p class="control-hint">Every daily circle becomes a wash of pigment. Its area still encodes hours: outlines wobble, but each shape keeps the circle’s area.</p>
+            <button id="repaint" class="outline-button">Repaint <span aria-hidden="true">↻</span></button>
+            <div class="paint-group">
+              <h3>Session data</h3>
+              <div id="data-sliders"></div>
+              <p class="control-hint">Data drive steers each blob by its session. Effort sets the aggression: darker, more numerous, more jagged discoloration on hard days. It is also the chance that this table picks the texture rather than the Texture mix below. At 1 the session decides; at 0 everything is left to chance.</p>
+              <div id="texture-rules" class="texture-rules" role="group" aria-label="Texture odds per session type"></div>
+              <div id="texture-key" class="texture-key" aria-hidden="true"></div>
+              <p class="control-hint">Rows are checked top to bottom; the first match wins. Effort and variability are percentiles within each sport. Days without effort data use the Texture mix unless climbing, duration, or variability places them.</p>
+              <div class="rule-editor">
+                <h4 id="rule-title"></h4>
+                <label id="rule-threshold-control" class="slider"><span class="slider-heading"><span id="rule-threshold-label"></span><output id="rule-threshold-value" for="rule-threshold"></output></span><input id="rule-threshold" type="range" /></label>
+                <div id="rule-odds"></div>
+              </div>
+              <p id="texture-share" class="control-hint"></p>
+            </div>
+            <div class="paint-group">
+              <h3>Shape</h3>
+              <label class="select-row"><span>Distribution</span><select id="shapeDistribution"></select></label>
+              <canvas id="distribution-preview" aria-label="Histogram of sampled irregularity per blob"></canvas>
+              <p id="distribution-help" class="control-hint"></p>
+              <div id="shape-paint-sliders"></div>
+            </div>
+            <div class="paint-group">
+              <h3>Pigment</h3>
+              <div id="pigment-sliders"></div>
+              <p class="control-hint">Funk mixes odd-one-out colors into dark centers, stripes, and speckles: neighbors and the other sports’ pigments at first, complements toward the top. Each wash stays on its sport’s color.</p>
+            </div>
+            <div class="paint-group">
+              <h3>Water and paper</h3>
+              <div id="water-sliders"></div>
+              <label class="select-row"><span>Glazing</span><select id="paintBlend"></select></label>
+            </div>
+            <div class="paint-group">
+              <h3>Texture mix · chance</h3>
+              <div id="texture-sliders"></div>
+              <p class="control-hint">Relative weights for blobs the session table does not decide: Data drive below 1, or no session data.</p>
+            </div>
           </div>
         </section>
         <section id="panel-grid" class="control-section" role="tabpanel" aria-labelledby="tab-grid" hidden>

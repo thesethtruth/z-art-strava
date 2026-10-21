@@ -1,7 +1,9 @@
 import data from "../data/daily-activities.json";
 import type { Sport } from "./settings";
 
-export type Daily = { date: string; sport: Sport; hours: number; activities: number };
+// Session signals are per-sport percentiles (effort, variability) or raw values; null without data.
+export type SessionSignals = { effort: number | null; variability: number | null; climb: number | null; if: number | null; hr: number | null };
+export type Daily = { date: string; sport: Sport; hours: number; activities: number } & Partial<SessionSignals>;
 export const DAILY = data.daily as Daily[];
 export const META = data.meta;
 export const YEARS = data.meta.years;

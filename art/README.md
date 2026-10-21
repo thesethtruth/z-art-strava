@@ -10,7 +10,7 @@ bun install
 bun run dev
 ```
 
-Open http://127.0.0.1:3000. Controls are organized into **Layout**, **Color** (including opacity and blending), and **Grid** tabs. Layout contains **Seven day** and **Spring cluster** variants. Choose a palette preset, generate a palette, or edit the colors individually. Adjust circle sizes, the base radius, mixed-sport spreading or stacking, opacity, grid width and height, and blending. Changes persist in this browser. **Export settings** downloads a JSON file named for the active mode; **Import settings** restores it. The file explicitly includes `mode`, a `spring` block with all seven simulation parameters (including the arrangement seed), a `weekday` block, and the shared color, size, and grid settings. Both layouts’ controls are retained. Older settings retain their colors and radius: `dayRadius` migrates to `baseRadius`, `gridSize` remains width only, and removed duration-based positioning and millimeter offsets are ignored.
+Open http://127.0.0.1:3000. Controls are organized into **Layout**, **Paint** (flat circles or watercolor), **Color** (including opacity and blending), and **Grid** tabs. Layout contains **Seven day** and **Spring cluster** variants. Choose a palette preset, generate a palette, or edit the colors individually. Adjust circle sizes, the base radius, mixed-sport spreading or stacking, opacity, grid width and height, and blending. Changes persist in this browser. **Export settings** downloads a JSON file named for the active mode; **Import settings** restores it. The file explicitly includes `mode`, a `spring` block with all seven simulation parameters (including the arrangement seed), a `weekday` block, and the shared color, size, and grid settings. Both layouts’ controls are retained. Older settings retain their colors and radius: `dayRadius` migrates to `baseRadius`, `gridSize` remains width only, and removed duration-based positioning and millimeter offsets are ignored.
 
 Click a sport name to highlight it. Enable **Inspect weeks** and move over the canvas to read the week in the sidebar. **Preview** hides the studio controls and removes highlighting; Escape returns to editing. Neither highlights nor studio controls appear in exports.
 
@@ -56,7 +56,7 @@ Layout geometry is cached so color edits and inspection do not rerun the simulat
 
 ## Palettes and blending
 
-Seven one-click palettes include the original colors plus six new starting points. Each sets the four activity colors, paper, week dots, and legend text together; it preserves the current sizes, opacity, and blending. Individual color edits are still available, and a modified palette no longer shows as a selected preset.
+Eight one-click palettes include the original colors plus seven new starting points. Each sets the four activity colors, paper, week dots, and legend text together; it preserves the current sizes, opacity, and blending. Individual color edits are still available, and a modified palette no longer shows as a selected preset.
 
 | Palette | Direction |
 | --- | --- |
@@ -67,6 +67,7 @@ Seven one-click palettes include the original colors plus six new starting point
 | Dusk | Violet, lilac, salmon, and petrol on pale rose |
 | Cyanotype | Four blue tones on cool paper |
 | Risograph | Blue, coral, mustard, and teal on warm stock |
+| Aquarelle | Indigo, raw sienna, sap green, and peach on warm white: pigments for the watercolor style |
 
 Four blend modes suit the translucent marks: **Layered color** for straightforward overlapping color, **Multiply** for deeper overlaps, **Screen** for luminous overlaps, and **Soft light** for subtler mixing. The added modes blend circles together on a transparent activity layer before placing them over the paper. This keeps non-overlapping marks visible with Screen on a light background, and keeps the week dots and legend out of the blending. The same renderer is used for preview, PNG, and PDF. Saved settings using a removed blend mode fall back to Layered color.
 
@@ -82,6 +83,69 @@ Out-of-gamut colors are fitted by reducing chroma at fixed lightness and hue thr
 
 The lightweight implementation is in `src/color-science.ts` and `src/random-palette.ts`, with no additional dependencies. The conversion matrices come from [Björn Ottosson's public-domain OKLab implementation](https://bottosson.github.io/posts/oklab/); the choice of constant-lightness/hue chroma reduction follows the principles discussed in [CSS Color 4](https://www.w3.org/TR/css-color-4/#css-gamut-mapping). Mood ranges, harmony selection, and palette scoring are design decisions for this artwork.
 
+## Watercolor
+
+**Paint → Watercolor** turns every daily circle into a wash of pigment. Flat remains the default, and older settings keep their flat circles. Flat rendering is unchanged pixel for pixel.
+
+**Data integrity.** Each blob's outline is a Fourier wobble (2 + Lobes harmonics) normalized so its area equals the circle's: `½∮R(φ)² dφ = πr²`. Elongation stretches the shape by `√a` and `1/√a`, which also preserves area. Circle area therefore still encodes hours (tests check the rasterized area within 1.5%). Layout, positions, and sizes come from the selected Seven day or Spring cluster layout; paint controls never rerun the simulation.
+
+**Pigment model.** Colors mix by Beer–Lambert absorbance instead of alpha. Each color becomes an absorbance `A = −ln(linear sRGB)`, so density 1 of a sport's pigment reproduces that sport's color over white. Thinner washes become tints, and pooled pigment deepens toward a saturated shade. A blob's density field combines:
+
+- a base wash (mottled with low-frequency noise),
+- pooling toward the bottom,
+- a dried, darkened rim (edge darkening),
+- one or more seeded **dark centers**,
+- its texture,
+- granulation into a shared paper-tooth field in page millimeters, so overlapping blobs settle into the same grain.
+
+Each blob is stored as color-to-alpha against white, and glazes multiply. Overlaps therefore darken like transparent layers: the paper × the product of every glaze's transmittance. Glazing can also use the other blend modes.
+
+**Dark centers** are seeded at random positions inside the blob. Their count is `1 + Poisson(rate × hours^0.75 × aggression)`, so longer days are more likely to carry several. Each center has its own color, varied by the lightness and saturation jitter. **Funk** is the chance that a center, stripe, seam, speckle, or bleeding core takes an odd-one-out color. Low funk borrows one of the other sports' pigments or turns the hue 25–60°; high funk reaches complements and triads. The base wash always stays on the sport's color.
+
+**Textures.** Seven textures, with relative weights under **Texture mix**:
+
+- **Wash**: a plain gradient.
+- **Stripes**: soft bands across the long axis, sometimes with a seam in a second color.
+- **Speckle**: dark spatter, sometimes outside the edge, plus pale lifted drops.
+- **Bloom**: a backrun, paler inside a darker cauliflower edge.
+- **Outline**: a pale wash with a dried rim, sometimes a double ring.
+- **Dry brush**: dragged streaks that skip the paper's tooth.
+- **Bleed**: a dark core that runs past the dried edge in tendrils.
+
+**Session data.** Each day's sessions decide its blob through a table of session types, checked top to bottom (first match wins). Default thresholds and odds:
+
+| Session | Rule | Days | Texture odds |
+| --- | --- | ---: | --- |
+| Hard | effort ≥ p80 | 333 | bleed 50%, speckle 45%, wash 5% |
+| Intervals | variability ≥ p95 | 74 | stripes 80%, speckle 10%, wash 10% |
+| Climbing | ≥ 350 m/h | 57 | dry brush 80%, wash 20% |
+| Long day | ≥ 4 h | 104 | bloom 80%, wash 20% |
+| Easy | effort ≤ p20 | 272 | outline 85%, wash 15% |
+| Steady | every other day | 829 | wash 90%, bloom 5%, dry brush 5% |
+
+Effort and variability are percentiles within each sport (see *Session signals* below). Click a row in **Paint → Session data** to edit its threshold and odds. The rows show live day counts and the odds as a bar, and the studio reports the texture shares of the whole print. A row at 100% for one texture makes it deterministic. Days without effort data use the Texture mix unless climbing, duration, or variability already places them (15 days).
+
+**Data drive** (default 1) is the chance that this table, rather than the **Texture mix**, picks a blob's texture. It also blends each blob's **aggression** between chance and its effort percentile. Aggression gives darker, more numerous dark centers, more jagged edges and discoloration, and wider color jitter. At 1 the session decides; at 0 everything is left to chance. With the defaults, stripes are rare (3.5% of the print). The inspector lists each week's effort, IF or average heart rate, and every blob's session type and texture.
+
+**Shape distribution.** Irregularity and elongation are drawn per blob from the selected family: Normal, Uniform, Log-normal, Gamma, Weibull, Poisson, or Exponential. Every family is moment-matched to the same **mean** and **coefficient of variation**, so Variance means the same thing in each and only the shape of the spread changes:
+
+| Family | Spread |
+| --- | --- |
+| Normal | Symmetric, truncated at zero |
+| Log-normal | Long tail of strongly deformed blobs |
+| Gamma | Right-skewed |
+| Weibull | Flexible skew, shape found numerically from the CV |
+| Poisson | Discrete steps: `(mean/λ)·Poisson(λ)`, `λ = 1/CV²` |
+| Exponential | Shifted to keep the mean and spread |
+
+A histogram under the selector shows the current draw. Elongation is capped at 4.5:1. Orientation and orientation jitter rotate the long axis.
+
+**Repaint** reseeds every blob. Randomness is split into independent streams per blob (signals, texture, shape, wash, each center, each color). Moving Funk never reshuffles shapes, and adding a dark center never moves the others. The same settings reproduce the same painting in the preview, PNG, and PDF. All noise is defined in millimeters: octaves finer than two pixels fade out on screen, and the 300 dpi export keeps the full detail. **Paper grain** optionally prints the paper's fine tooth as a faint multiply; leave it at zero on textured fine-art paper. In watercolor, the Opacity slider becomes **Pigment load** (0.7 = normal), and the legend dots become small washes. Between-week overlap colors apply to flat circles only.
+
+While a slider moves, the studio repaints at reduced resolution and refines after a pause. Hovering and highlighting reuse the cached painting. An A1 PDF with bleed exports in about 10 s.
+
+Implementation: `src/watercolor.ts` (recipes and rasterizer), `src/distributions.ts` (seeded samplers), `src/noise.ts` (gradient noise and paper grain).
+
 ## Data provenance
 
 The input is **`../data/consolidated_trainings.json`**, the result of `join_strava_polar.py`. Its source selection, sport mapping, and local calendar dates are retained. No upstream scripts or data are modified, and no additional deduplication is performed.
@@ -93,6 +157,17 @@ bun run data
 ```
 
 The prepared artwork contains **1,965 activities**, **1,614 active days**, **1,684 daily sport circles**, and **3,126.955244 hours**. It excludes all **four individual rowing sessions longer than four hours**, the erroneous **23.4562847222-hour Polar cycling session on 7 January 2017**, and one zero-hour cycling entry (which has no drawable area). The rowing threshold is applied before daily aggregation: a day with multiple valid sessions can still total more than four hours. Swimming and Other are outside the requested sports.
+
+### Session signals
+
+`prepare_data.py` also summarizes each day and sport's sessions for the watercolor style. Strava rows are joined back to `../data/strava_trainings.csv` by `source_row` for normalized power and elevation. Physiology comes from the Polar profile snapshots in the export (2016–2022): maximum HR 196–200, resting HR 45, anaerobic threshold 180, FTP 294–300 W. Strava's own Intensity field implies the same ~300 W FTP in 2024.
+
+- **effort**: session effort from IF = NP / 300 W for rides with normalized power (0.55–1.02 → 0–1). Otherwise average HR (105–178 bpm), otherwise kcal per hour. Duration-weighted per day, then a percentile within the sport, so every sport spans calm to fierce.
+- **variability**: variability index NP / average power (1.00–1.25) where power exists, otherwise max minus average HR (15–60 bpm); a percentile within the sport.
+- **climb**: Strava elevation gain per hour (cycling and running).
+- **if** and **hr**: duration-weighted raw values, shown by the inspector.
+
+Coverage is recorded in `meta.sessionSignals`: effort for 1,669 of 1,684 daily circles. Hours and activity counts are unchanged.
 
 The **19.9483333333-hour Amsterdam–Paris ride on 8 June 2019 is retained**. No general cycling-duration cap is applied. The first retained activity is **2 January 2016** and the last is **12 December 2025**; the matrix still extends through 31 December. No activity is fabricated for missing dates.
 
@@ -130,7 +205,7 @@ bun run test
 bun run build
 ```
 
-Tests cover every calendar date, source/derived totals and exclusions, preservation of the Amsterdam–Paris ride, square-root area scaling, exact ring tangency, fractional sector positions, diameter-based stacking, grid-height centering, settings migration, and palette application. Spring tests cover deterministic geometry, calendar membership, duration areas, center-distance bounds, centered single bubbles, collision-driven outward movement, size dominance, reduced overlap and free reorientation between neighboring clusters, and settings round trips. Color tests check reference conversions, gamut fitting, seeded reproducibility, perceptual separation, and legend contrast across 180 generated palettes. On macOS, PDFKit can verify the one-page A1 size and render a preview without additional dependencies:
+Tests cover every calendar date, source/derived totals and exclusions, preservation of the Amsterdam–Paris ride, square-root area scaling, exact ring tangency, fractional sector positions, diameter-based stacking, grid-height centering, settings migration, and palette application. Spring tests cover deterministic geometry, calendar membership, duration areas, center-distance bounds, centered single bubbles, collision-driven outward movement, size dominance, reduced overlap and free reorientation between neighboring clusters, and settings round trips. Color tests check reference conversions, gamut fitting, seeded reproducibility, perceptual separation, and legend contrast across 180 generated palettes. Watercolor tests cover moment matching for every shape distribution, area-preserving outlines and rasterized area, deterministic recipes, Funk changing color only, session-rule ordering, deterministic table rows, rare default stripes, more dark centers on longer days, session-signal ranges, and watercolor settings validation and round trips. On macOS, PDFKit can verify the one-page A1 size and render a preview without additional dependencies:
 
 ```sh
 swift scripts/verify_pdf.swift output/pdf/movement-2016-2025-A1.pdf output/pdf/verified-preview.png
